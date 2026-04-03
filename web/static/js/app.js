@@ -45,6 +45,8 @@ const App = {
     });
     diff2htmlUi.draw();
     diff2htmlUi.highlightCode();
+
+    DiffView.reattachComments();
   },
 };
 
