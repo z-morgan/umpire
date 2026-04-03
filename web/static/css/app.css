@@ -396,6 +396,16 @@ body {
   color: var(--text-secondary);
 }
 
+/* Expandable hunk headers */
+tr.d2h-expandable {
+  cursor: pointer;
+}
+
+tr.d2h-expandable:hover .d2h-info,
+tr.d2h-expandable:hover .d2h-code-line-ctn {
+  background: rgba(56, 139, 253, 0.2) !important;
+}
+
 /* Empty placeholders */
 .d2h-emptyplaceholder,
 .d2h-code-side-emptyplaceholder {

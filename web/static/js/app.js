@@ -195,6 +195,7 @@ const App = {
     diff2htmlUi.highlightCode();
 
     DiffView.reattachComments();
+    DiffExpander.attach();
   },
 
   async submitReview() {

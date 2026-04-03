@@ -22,6 +22,12 @@ const API = {
     return resp.json();
   },
 
+  async getFileLines(ref, path, start, end) {
+    const params = new URLSearchParams({ ref, path, start, end });
+    const resp = await fetch(`/api/file-lines?${params}`);
+    return resp.json();
+  },
+
   async submitReview(review) {
     const resp = await fetch('/api/review', {
       method: 'POST',
