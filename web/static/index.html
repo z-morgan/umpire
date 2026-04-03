@@ -4,12 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Umpire — Code Review</title>
+  <link rel="stylesheet" href="/css/diff2html.min.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-  <div id="app">
+  <header id="top-bar">
     <h1>Umpire</h1>
-    <p>Code review tool is loading...</p>
+    <span id="branch-info"></span>
+  </header>
+
+  <div id="layout">
+    <aside id="sidebar"></aside>
+    <main id="diff-container"></main>
   </div>
+
+  <script src="/js/highlight.min.js"></script>
+  <script src="/js/diff2html-ui.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
