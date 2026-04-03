@@ -12,6 +12,7 @@ const App = {
       `${info.base_ref}..${info.head_ref}`;
 
     this.initSubmitBar();
+    this.initKeyboardShortcuts();
 
     await Promise.all([
       this.loadFullDiff(),
@@ -23,6 +24,69 @@ const App = {
     document.getElementById('submit-review').addEventListener('click', () => {
       this.submitReview();
     });
+  },
+
+  initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Don't intercept when typing in inputs/textareas
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+      const fileWrappers = document.querySelectorAll('.d2h-file-wrapper');
+      const fileArray = Array.from(fileWrappers);
+
+      switch (e.key) {
+        case 'j': // Next file
+          this.navigateFile(fileArray, 1);
+          break;
+        case 'k': // Previous file
+          this.navigateFile(fileArray, -1);
+          break;
+        case 'n': // Next commit
+          this.navigateCommit(1);
+          break;
+        case 'p': // Previous commit
+          this.navigateCommit(-1);
+          break;
+      }
+    });
+  },
+
+  navigateFile(fileWrappers, direction) {
+    if (fileWrappers.length === 0) return;
+
+    const scrollY = window.scrollY + 60;
+    let currentIndex = -1;
+
+    for (let i = 0; i < fileWrappers.length; i++) {
+      if (fileWrappers[i].offsetTop <= scrollY) {
+        currentIndex = i;
+      }
+    }
+
+    const nextIndex = Math.max(0, Math.min(fileWrappers.length - 1, currentIndex + direction));
+    fileWrappers[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  navigateCommit(direction) {
+    if (Sidebar.commits.length === 0) return;
+
+    const commits = Sidebar.commits;
+    let currentIndex = commits.findIndex(c => c.sha === Sidebar.activeCommitSHA);
+
+    // -1 means "All changes" (before first commit)
+    const nextIndex = currentIndex + direction;
+
+    if (nextIndex < -1 || nextIndex >= commits.length) return;
+
+    if (nextIndex === -1) {
+      Sidebar.activeCommitSHA = null;
+      Sidebar.switchTab('commits');
+      this.loadFullDiff();
+    } else {
+      Sidebar.activeCommitSHA = commits[nextIndex].sha;
+      Sidebar.switchTab('commits');
+      this.loadCommitDiff(commits[nextIndex].sha);
+    }
   },
 
   updateCommentCount() {
