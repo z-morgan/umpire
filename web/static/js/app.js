@@ -87,6 +87,8 @@ const App = {
       Sidebar.switchTab('commits');
       this.loadCommitDiff(commits[nextIndex].sha);
     }
+
+    window.scrollTo({ top: 0 });
   },
 
   updateCommentCount() {
@@ -96,13 +98,79 @@ const App = {
   },
 
   async loadFullDiff() {
+    this.removeCommitHeader();
     const diff = await API.getDiff();
     this.renderDiff(diff);
   },
 
   async loadCommitDiff(sha) {
+    const commit = Sidebar.commits.find(c => c.sha === sha);
+    this.renderCommitHeader(commit);
     const diff = await API.getDiff(sha);
     this.renderDiff(diff);
+  },
+
+  renderCommitHeader(commit) {
+    this.removeCommitHeader();
+    if (!commit) return;
+
+    const commits = Sidebar.commits;
+    const currentIndex = commits.findIndex(c => c.sha === commit.sha);
+    const hasPrev = true; // Can always go back to "All changes"
+    const hasNext = currentIndex < commits.length - 1;
+
+    const header = document.createElement('div');
+    header.id = 'commit-header';
+
+    const nav = document.createElement('div');
+    nav.className = 'commit-nav';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn commit-nav-btn';
+    prevBtn.innerHTML = '&larr; <kbd>p</kbd>';
+    prevBtn.disabled = !hasPrev;
+    prevBtn.addEventListener('click', () => this.navigateCommit(-1));
+
+    const position = document.createElement('span');
+    position.className = 'commit-nav-position';
+    position.textContent = `Commit ${currentIndex + 1} of ${commits.length}`;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn commit-nav-btn';
+    nextBtn.innerHTML = '<kbd>n</kbd> &rarr;';
+    nextBtn.disabled = !hasNext;
+    nextBtn.addEventListener('click', () => this.navigateCommit(1));
+
+    nav.append(prevBtn, position, nextBtn);
+
+    const message = document.createElement('div');
+    message.className = 'commit-message';
+
+    const shortSHA = commit.sha.substring(0, 7);
+    const subject = document.createElement('h2');
+    subject.className = 'commit-message-subject';
+    subject.textContent = commit.subject;
+
+    const meta = document.createElement('div');
+    meta.className = 'commit-message-meta';
+    meta.innerHTML = `<span class="commit-sha">${shortSHA}</span> ${Sidebar.escapeHTML(commit.author)} &middot; ${commit.date}`;
+
+    message.append(subject, meta);
+
+    if (commit.body) {
+      const body = document.createElement('pre');
+      body.className = 'commit-message-body';
+      body.textContent = commit.body;
+      message.append(body);
+    }
+
+    header.append(nav, message);
+    this.diffContainer.parentNode.insertBefore(header, this.diffContainer);
+  },
+
+  removeCommitHeader() {
+    const existing = document.getElementById('commit-header');
+    if (existing) existing.remove();
   },
 
   renderDiff(diffString) {

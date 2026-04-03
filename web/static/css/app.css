@@ -181,6 +181,89 @@ body {
   color: var(--text-secondary);
 }
 
+/* === Commit header === */
+#commit-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  padding: 0.75rem 1rem;
+}
+
+.commit-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.commit-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.commit-nav-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.commit-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.commit-nav-btn kbd {
+  display: inline-block;
+  padding: 0.1em 0.35em;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.commit-nav-position {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.commit-message {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+.commit-message-subject {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.35rem;
+}
+
+.commit-message-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.commit-message-meta .commit-sha {
+  font-family: "SF Mono", "Menlo", monospace;
+  color: var(--text-link);
+}
+
+.commit-message-body {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 /* === Diff container === */
 #diff-container {
   flex: 1;
