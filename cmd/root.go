@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/zmorgan/umpire/internal/browser"
+	gitpkg "github.com/zmorgan/umpire/internal/git"
+	"github.com/zmorgan/umpire/internal/server"
 )
 
 var (
@@ -33,9 +37,16 @@ func Execute() error {
 }
 
 func runReview(cmd *cobra.Command, args []string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("getting working directory: %w", err)
+	}
+
+	repo := gitpkg.NewRepo(cwd)
+
 	head := flagHead
 	if head == "" {
-		branch, err := currentBranch()
+		branch, err := repo.CurrentBranch()
 		if err != nil {
 			return fmt.Errorf("detecting current branch: %w", err)
 		}
@@ -43,13 +54,30 @@ func runReview(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "Reviewing %s..%s\n", flagBase, head)
-	return nil
-}
 
-func currentBranch() (string, error) {
-	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	srv, err := server.New(flagPort)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("starting server: %w", err)
 	}
-	return strings.TrimSpace(string(out)), nil
+
+	url := srv.URL()
+	fmt.Fprintf(os.Stderr, "Serving at %s\n", url)
+	browser.Open(url)
+
+	// Graceful shutdown on interrupt
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.Serve()
+	}()
+
+	select {
+	case <-ctx.Done():
+		fmt.Fprintln(os.Stderr, "\nShutting down...")
+		return srv.Shutdown(context.Background())
+	case err := <-errCh:
+		return err
+	}
 }
