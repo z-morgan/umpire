@@ -7,13 +7,28 @@ const App = {
     this.diffContainer = document.getElementById('diff-container');
 
     const info = await API.getInfo();
+    this.info = info;
     document.getElementById('branch-info').textContent =
       `${info.base_ref}..${info.head_ref}`;
+
+    this.initSubmitBar();
 
     await Promise.all([
       this.loadFullDiff(),
       Sidebar.init(),
     ]);
+  },
+
+  initSubmitBar() {
+    document.getElementById('submit-review').addEventListener('click', () => {
+      this.submitReview();
+    });
+  },
+
+  updateCommentCount() {
+    const count = ReviewState.getCommentCount();
+    const label = count === 1 ? '1 comment' : `${count} comments`;
+    document.getElementById('comment-count').textContent = label;
   },
 
   async loadFullDiff() {
@@ -47,6 +62,30 @@ const App = {
     diff2htmlUi.highlightCode();
 
     DiffView.reattachComments();
+  },
+
+  async submitReview() {
+    const summary = document.getElementById('review-summary').value.trim();
+    const comments = ReviewState.getAllComments();
+
+    if (!summary && comments.length === 0) {
+      alert('Add a summary or comments before submitting.');
+      return;
+    }
+
+    const submitBtn = document.getElementById('submit-review');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    const result = await API.submitReview({ summary, comments });
+
+    const submitBar = document.getElementById('submit-bar');
+    submitBar.innerHTML = `
+      <div class="submit-success">
+        Review saved to <code>${result.path}</code>
+        <p>Server shutting down...</p>
+      </div>
+    `;
   },
 };
 

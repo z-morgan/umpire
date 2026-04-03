@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/zmorgan/umpire/internal/browser"
 	gitpkg "github.com/zmorgan/umpire/internal/git"
+	"github.com/zmorgan/umpire/internal/review"
 	"github.com/zmorgan/umpire/internal/server"
 )
 
@@ -68,6 +70,9 @@ func runReview(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("finding merge base: %w", err)
 	}
 
+	store := review.NewStore(cwd)
+	submitCh := make(chan string, 1)
+
 	rc := &server.ReviewContext{
 		Repo:      repo,
 		BaseRef:   flagBase,
@@ -75,6 +80,10 @@ func runReview(cmd *cobra.Command, args []string) error {
 		BaseSHA:   baseSHA,
 		HeadSHA:   headSHA,
 		MergeBase: mergeBase,
+		Store:     store,
+		OnSubmit: func(path string) {
+			submitCh <- path
+		},
 	}
 
 	fmt.Fprintf(os.Stderr, "Reviewing %s..%s\n", flagBase, head)
@@ -90,7 +99,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "Serving at %s\n", url)
 	browser.Open(url)
 
-	// Graceful shutdown on interrupt
+	// Graceful shutdown on interrupt or review submission
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -102,6 +111,12 @@ func runReview(cmd *cobra.Command, args []string) error {
 	select {
 	case <-ctx.Done():
 		fmt.Fprintln(os.Stderr, "\nShutting down...")
+		return srv.Shutdown(context.Background())
+	case path := <-submitCh:
+		fmt.Fprintf(os.Stderr, "\nReview saved to %s\n", path)
+		// Brief delay so the browser gets the response
+		time.Sleep(500 * time.Millisecond)
+		fmt.Fprintln(os.Stderr, "Shutting down...")
 		return srv.Shutdown(context.Background())
 	case err := <-errCh:
 		return err

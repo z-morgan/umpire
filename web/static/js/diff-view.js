@@ -107,6 +107,7 @@ const DiffView = {
       const comment = ReviewState.addComment(file, lineNumber, side, body, diffHunk);
       formRow.remove();
       this.renderComment(row, comment);
+      App.updateCommentCount();
     });
 
     cancelBtn.addEventListener('click', () => formRow.remove());
@@ -157,6 +158,7 @@ const DiffView = {
     cell.querySelector('.btn-delete').addEventListener('click', () => {
       ReviewState.deleteComment(comment.id);
       commentRow.remove();
+      App.updateCommentCount();
     });
 
     commentRow.appendChild(cell);
