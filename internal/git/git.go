@@ -11,6 +11,7 @@ import (
 type Commit struct {
 	SHA     string `json:"sha"`
 	Subject string `json:"subject"`
+	Body    string `json:"body"`
 	Author  string `json:"author"`
 	Date    string `json:"date"`
 }
@@ -61,7 +62,9 @@ func (r *Repo) ResolveSHA(ref string) (string, error) {
 
 // CommitsBetween returns commits from base..head in reverse chronological order.
 func (r *Repo) CommitsBetween(base, head string) ([]Commit, error) {
-	out, err := r.run("log", "--format=%H\x1f%s\x1f%an\x1f%aI", base+".."+head)
+	// Use record separator (\x1e) between commits because the body can contain newlines.
+	// Body is last so SplitN captures it entirely even if it contains field separators.
+	out, err := r.run("log", "--format=%H\x1f%s\x1f%an\x1f%aI\x1f%b\x1e", base+".."+head)
 	if err != nil {
 		return nil, err
 	}
@@ -70,16 +73,25 @@ func (r *Repo) CommitsBetween(base, head string) ([]Commit, error) {
 	}
 
 	var commits []Commit
-	for _, line := range strings.Split(out, "\n") {
-		parts := strings.SplitN(line, "\x1f", 4)
-		if len(parts) != 4 {
+	for _, record := range strings.Split(out, "\x1e") {
+		record = strings.TrimSpace(record)
+		if record == "" {
 			continue
+		}
+		parts := strings.SplitN(record, "\x1f", 5)
+		if len(parts) < 4 {
+			continue
+		}
+		body := ""
+		if len(parts) == 5 {
+			body = strings.TrimSpace(parts[4])
 		}
 		commits = append(commits, Commit{
 			SHA:     parts[0],
 			Subject: parts[1],
 			Author:  parts[2],
 			Date:    formatDate(parts[3]),
+			Body:    body,
 		})
 	}
 	return commits, nil
