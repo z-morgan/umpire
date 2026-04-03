@@ -17,7 +17,7 @@ type ReviewContext struct {
 	HeadSHA    string
 	MergeBase  string
 	Store      *review.Store
-	OnSubmit   func(path string) // called after review is saved
+	OnSubmit   func(path string, commentCount int) // called after review is saved
 }
 
 // RegisterAPI registers the API routes on the server's mux.
@@ -103,7 +103,7 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, resp)
 
 	if rc.OnSubmit != nil {
-		go rc.OnSubmit(path)
+		go rc.OnSubmit(path, len(req.Comments))
 	}
 }
 

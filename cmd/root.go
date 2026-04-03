@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -70,8 +73,23 @@ func runReview(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("finding merge base: %w", err)
 	}
 
+	commits, err := repo.CommitsBetween(mergeBase, headSHA)
+	if err != nil {
+		return fmt.Errorf("listing commits: %w", err)
+	}
+
+	files, err := repo.ChangedFiles(mergeBase, headSHA)
+	if err != nil {
+		return fmt.Errorf("listing changed files: %w", err)
+	}
+
 	store := review.NewStore(cwd)
-	submitCh := make(chan string, 1)
+
+	type submitMsg struct {
+		path         string
+		commentCount int
+	}
+	submitCh := make(chan submitMsg, 1)
 
 	rc := &server.ReviewContext{
 		Repo:      repo,
@@ -81,12 +99,10 @@ func runReview(cmd *cobra.Command, args []string) error {
 		HeadSHA:   headSHA,
 		MergeBase: mergeBase,
 		Store:     store,
-		OnSubmit: func(path string) {
-			submitCh <- path
+		OnSubmit: func(path string, commentCount int) {
+			submitCh <- submitMsg{path: path, commentCount: commentCount}
 		},
 	}
-
-	fmt.Fprintf(os.Stderr, "Reviewing %s..%s\n", flagBase, head)
 
 	srv, err := server.New(flagPort)
 	if err != nil {
@@ -96,7 +112,16 @@ func runReview(cmd *cobra.Command, args []string) error {
 	server.RegisterAPI(srv.Mux(), rc)
 
 	url := srv.URL()
-	fmt.Fprintf(os.Stderr, "Serving at %s\n", url)
+
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintf(os.Stderr, "  umpire — local code review\n")
+	fmt.Fprintf(os.Stderr, "  %s..%s\n", flagBase, head)
+	fmt.Fprintf(os.Stderr, "  %d commits, %d files changed\n", len(commits), len(files))
+	fmt.Fprintf(os.Stderr, "  %s\n", url)
+	fmt.Fprintln(os.Stderr, "")
+
+	suggestGitignore(cwd)
+
 	browser.Open(url)
 
 	// Graceful shutdown on interrupt or review submission
@@ -112,13 +137,34 @@ func runReview(cmd *cobra.Command, args []string) error {
 	case <-ctx.Done():
 		fmt.Fprintln(os.Stderr, "\nShutting down...")
 		return srv.Shutdown(context.Background())
-	case path := <-submitCh:
-		fmt.Fprintf(os.Stderr, "\nReview saved to %s\n", path)
+	case msg := <-submitCh:
+		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintf(os.Stderr, "  Review submitted: %d comments\n", msg.commentCount)
+		fmt.Fprintf(os.Stderr, "  Saved to %s\n", msg.path)
+		fmt.Fprintln(os.Stderr, "")
 		// Brief delay so the browser gets the response
 		time.Sleep(500 * time.Millisecond)
-		fmt.Fprintln(os.Stderr, "Shutting down...")
 		return srv.Shutdown(context.Background())
 	case err := <-errCh:
 		return err
 	}
+}
+
+func suggestGitignore(repoDir string) {
+	path := filepath.Join(repoDir, ".gitignore")
+	f, err := os.Open(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  hint: add .umpire/ to your .gitignore\n\n")
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == ".umpire/" || line == ".umpire" {
+			return
+		}
+	}
+	fmt.Fprintf(os.Stderr, "  hint: add .umpire/ to your .gitignore\n\n")
 }
