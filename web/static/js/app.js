@@ -5,7 +5,15 @@ const App = {
 
   async init() {
     this.diffContainer = document.getElementById('diff-container');
-    await this.loadFullDiff();
+
+    const info = await API.getInfo();
+    document.getElementById('branch-info').textContent =
+      `${info.base_ref}..${info.head_ref}`;
+
+    await Promise.all([
+      this.loadFullDiff(),
+      Sidebar.init(),
+    ]);
   },
 
   async loadFullDiff() {
