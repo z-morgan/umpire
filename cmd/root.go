@@ -53,12 +53,38 @@ func runReview(cmd *cobra.Command, args []string) error {
 		head = branch
 	}
 
+	baseSHA, err := repo.ResolveSHA(flagBase)
+	if err != nil {
+		return fmt.Errorf("resolving base ref %q: %w", flagBase, err)
+	}
+
+	headSHA, err := repo.ResolveSHA(head)
+	if err != nil {
+		return fmt.Errorf("resolving head ref %q: %w", head, err)
+	}
+
+	mergeBase, err := repo.MergeBase(baseSHA, headSHA)
+	if err != nil {
+		return fmt.Errorf("finding merge base: %w", err)
+	}
+
+	rc := &server.ReviewContext{
+		Repo:      repo,
+		BaseRef:   flagBase,
+		HeadRef:   head,
+		BaseSHA:   baseSHA,
+		HeadSHA:   headSHA,
+		MergeBase: mergeBase,
+	}
+
 	fmt.Fprintf(os.Stderr, "Reviewing %s..%s\n", flagBase, head)
 
 	srv, err := server.New(flagPort)
 	if err != nil {
 		return fmt.Errorf("starting server: %w", err)
 	}
+
+	server.RegisterAPI(srv.Mux(), rc)
 
 	url := srv.URL()
 	fmt.Fprintf(os.Stderr, "Serving at %s\n", url)
