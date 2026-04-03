@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/zmorgan/umpire/internal/git"
 	"github.com/zmorgan/umpire/internal/review"
@@ -27,6 +29,7 @@ func RegisterAPI(mux *http.ServeMux, rc *ReviewContext) {
 	mux.HandleFunc("GET /api/files", rc.handleFiles)
 	mux.HandleFunc("GET /api/info", rc.handleInfo)
 	mux.HandleFunc("POST /api/review", rc.handleReview)
+	mux.HandleFunc("GET /api/file-lines", rc.handleFileLines)
 }
 
 func (rc *ReviewContext) handleInfo(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +108,52 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 	if rc.OnSubmit != nil {
 		go rc.OnSubmit(path, len(req.Comments))
 	}
+}
+
+func (rc *ReviewContext) handleFileLines(w http.ResponseWriter, r *http.Request) {
+	ref := r.URL.Query().Get("ref")
+	path := r.URL.Query().Get("path")
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	if ref == "" || path == "" || startStr == "" || endStr == "" {
+		http.Error(w, "ref, path, start, and end are required", http.StatusBadRequest)
+		return
+	}
+
+	start, err := strconv.Atoi(startStr)
+	if err != nil || start < 1 {
+		http.Error(w, "start must be a positive integer", http.StatusBadRequest)
+		return
+	}
+
+	end, err := strconv.Atoi(endStr)
+	if err != nil || end < start {
+		http.Error(w, "end must be an integer >= start", http.StatusBadRequest)
+		return
+	}
+
+	content, err := rc.Repo.ShowFile(ref, path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	lines := strings.Split(content, "\n")
+	if start > len(lines) {
+		start = len(lines) + 1
+	}
+	if end > len(lines) {
+		end = len(lines)
+	}
+
+	sliced := lines[start-1 : end]
+
+	writeJSON(w, map[string]any{
+		"lines": sliced,
+		"start": start,
+		"end":   end,
+	})
 }
 
 func writeJSON(w http.ResponseWriter, data any) {

@@ -131,6 +131,11 @@ func (r *Repo) ChangedFiles(base, head string) ([]ChangedFile, error) {
 	return files, nil
 }
 
+// ShowFile returns the full contents of a file at the given ref.
+func (r *Repo) ShowFile(ref, path string) (string, error) {
+	return r.run("show", ref+":"+path)
+}
+
 func formatDate(isoDate string) string {
 	t, err := time.Parse(time.RFC3339, isoDate)
 	if err != nil {
