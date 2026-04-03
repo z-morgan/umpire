@@ -230,11 +230,13 @@ body {
   border: none;
 }
 
+/* Context lines */
 .d2h-code-line-ctn {
   background: var(--bg-primary) !important;
   color: var(--text-primary);
 }
 
+/* Line numbers */
 .d2h-code-linenumber {
   background: var(--bg-secondary) !important;
   color: var(--text-secondary) !important;
@@ -248,22 +250,59 @@ body {
   background: var(--bg-tertiary) !important;
 }
 
+/* Added lines */
+.d2h-ins {
+  background: var(--added-bg) !important;
+  border-color: transparent !important;
+}
+
 .d2h-ins .d2h-code-line-ctn {
   background: var(--added-bg) !important;
+}
+
+.d2h-ins .d2h-code-linenumber {
+  background: var(--added-highlight) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Removed lines */
+.d2h-del {
+  background: var(--removed-bg) !important;
+  border-color: transparent !important;
 }
 
 .d2h-del .d2h-code-line-ctn {
   background: var(--removed-bg) !important;
 }
 
-.d2h-ins .d2h-code-linenumber {
-  background: var(--added-highlight) !important;
-}
-
 .d2h-del .d2h-code-linenumber {
   background: var(--removed-highlight) !important;
+  color: var(--text-secondary) !important;
 }
 
+/* Word-level highlights (inline <ins> and <del> elements) */
+.d2h-code-line del,
+.d2h-code-side-line del {
+  background-color: var(--removed-highlight) !important;
+  color: var(--text-primary) !important;
+}
+
+.d2h-code-line ins,
+.d2h-code-side-line ins {
+  background-color: var(--added-highlight) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Change (modified) lines */
+.d2h-file-diff .d2h-del.d2h-change {
+  background-color: rgba(210, 153, 34, 0.15) !important;
+}
+
+.d2h-file-diff .d2h-ins.d2h-change {
+  background-color: rgba(46, 160, 67, 0.2) !important;
+}
+
+/* Info/hunk headers */
 .d2h-info {
   background: rgba(56, 139, 253, 0.1) !important;
   color: var(--text-secondary) !important;
@@ -274,6 +313,7 @@ body {
   color: var(--text-secondary);
 }
 
+/* Empty placeholders */
 .d2h-emptyplaceholder,
 .d2h-code-side-emptyplaceholder {
   background: var(--bg-secondary) !important;

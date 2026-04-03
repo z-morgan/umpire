@@ -121,6 +121,7 @@ const App = {
       outputFormat: 'line-by-line',
       highlight: true,
       fileListToggle: false,
+      colorScheme: 'dark',
     });
     diff2htmlUi.draw();
     diff2htmlUi.highlightCode();
