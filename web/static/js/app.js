@@ -41,10 +41,10 @@ const App = {
         case 'k': // Previous file
           this.navigateFile(fileArray, -1);
           break;
-        case 'n': // Next commit
+        case 'ArrowRight': // Next commit
           this.navigateCommit(1);
           break;
-        case 'p': // Previous commit
+        case 'ArrowLeft': // Previous commit
           this.navigateCommit(-1);
           break;
       }
@@ -127,7 +127,7 @@ const App = {
 
     const prevBtn = document.createElement('button');
     prevBtn.className = 'btn commit-nav-btn';
-    prevBtn.innerHTML = '&larr; <kbd>p</kbd>';
+    prevBtn.innerHTML = '<kbd>&larr;</kbd>';
     prevBtn.disabled = !hasPrev;
     prevBtn.addEventListener('click', () => this.navigateCommit(-1));
 
@@ -137,7 +137,7 @@ const App = {
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'btn commit-nav-btn';
-    nextBtn.innerHTML = '<kbd>n</kbd> &rarr;';
+    nextBtn.innerHTML = '<kbd>&rarr;</kbd>';
     nextBtn.disabled = !hasNext;
     nextBtn.addEventListener('click', () => this.navigateCommit(1));
 
