@@ -13,6 +13,7 @@ const App = {
 
     this.initSubmitBar();
     this.initKeyboardShortcuts();
+    Resize.init();
 
     await Promise.all([
       this.loadFullDiff(),
