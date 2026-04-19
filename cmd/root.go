@@ -24,6 +24,10 @@ var (
 	flagPort int
 )
 
+func SetVersion(v string) {
+	rootCmd.Version = v
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "umpire",
 	Short: "Local code review tool",

@@ -1,0 +1,36 @@
+version: 2
+
+builds:
+  - main: .
+    binary: umpire
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+
+archives:
+  - formats:
+      - tar.gz
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+
+homebrew_casks:
+  - name: umpire
+    binaries:
+      - umpire
+    homepage: https://github.com/z-morgan/umpire
+    description: Local code review tool with a GitHub-like UI
+    repository:
+      owner: z-morgan
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
