@@ -37,7 +37,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 1rem;
+  padding: 0.35rem 1rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -45,8 +45,21 @@ body {
   z-index: 100;
 }
 
+#logo {
+  height: 44px;
+  width: auto;
+  margin-right: -1.25rem;
+  filter: brightness(0.82);
+}
+
+#title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 2rem;
+}
+
 #top-bar h1 {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 600;
 }
 
@@ -184,9 +197,18 @@ body {
 
 /* === Commit header === */
 #commit-header {
-  border-bottom: 1px solid var(--border);
+  width: 25vw;
+  min-width: 200px;
+  max-width: 400px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
   background: var(--bg-secondary);
   padding: 0.75rem 1rem;
+  overflow-y: auto;
+  position: sticky;
+  top: 50px;
+  height: calc(100vh - 50px - 80px);
+  box-sizing: border-box;
 }
 
 .commit-nav {
@@ -241,6 +263,8 @@ body {
   font-weight: 600;
   line-height: 1.4;
   margin-bottom: 0.35rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .commit-message-meta {
