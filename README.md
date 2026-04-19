@@ -5,15 +5,13 @@ Local code review tool. Umpire gives you a GitHub-like review UI in the browser 
 ## Install
 
 ```
+brew install z-morgan/tap/umpire
+```
+
+Or with Go:
+
+```
 go install github.com/zmorgan/umpire@latest
-```
-
-Or build from source:
-
-```
-git clone https://github.com/zmorgan/umpire.git
-cd umpire
-go build -o umpire .
 ```
 
 ## Usage
