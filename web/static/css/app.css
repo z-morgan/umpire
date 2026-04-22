@@ -674,6 +674,18 @@ tr.d2h-expandable:hover .d2h-code-line-ctn {
   margin-top: 0.25rem;
 }
 
+.feedback-message {
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 /* === Scrollbar === */
 ::-webkit-scrollbar {
   width: 8px;

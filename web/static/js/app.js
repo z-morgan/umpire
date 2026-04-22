@@ -101,6 +101,7 @@ const App = {
   async loadFullDiff() {
     this.removeCommitHeader();
     const diff = await API.getDiff();
+    this.fullDiff = diff;
     this.renderDiff(diff);
   },
 
@@ -212,15 +213,80 @@ const App = {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
+    this.lastReview = { summary, comments };
     const result = await API.submitReview({ summary, comments });
 
     const submitBar = document.getElementById('submit-bar');
     submitBar.innerHTML = `
       <div class="submit-success">
         Review saved to <code>${result.path}</code>
+        <p class="feedback-message">Record this feedback to improve future Claude sessions?</p>
+        <div class="feedback-actions">
+          <button class="btn btn-save" id="feedback-yes">Yes</button>
+          <button class="btn btn-cancel" id="feedback-no">No thanks</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('feedback-yes').addEventListener('click', () => this.recordFeedback(submitBar));
+    document.getElementById('feedback-no').addEventListener('click', () => this.shutdownAndShow(submitBar));
+  },
+
+  async recordFeedback(submitBar) {
+    const review = this.lastReview;
+    const result = await API.recordFeedback({
+      diff: this.fullDiff || '',
+      review: { summary: review.summary, comments: review.comments },
+    });
+
+    if (!result.threshold_reached) {
+      const remaining = 5 - result.count;
+      const noun = remaining === 1 ? 'review' : 'reviews';
+      submitBar.innerHTML = `
+        <div class="submit-success">
+          <p>Feedback recorded (${remaining} more ${noun} until analysis is available).</p>
+          <p class="feedback-message">Server shutting down...</p>
+        </div>
+      `;
+      API.shutdown();
+      return;
+    }
+
+    submitBar.innerHTML = `
+      <div class="submit-success">
+        <p>Feedback recorded &mdash; ${result.count} snapshots available.</p>
+        <p class="feedback-message">Generate a prompt to analyze your feedback and propose Claude config updates?</p>
+        <div class="feedback-actions">
+          <button class="btn btn-save" id="feedback-copy">Copy Prompt to Clipboard</button>
+          <button class="btn btn-cancel" id="feedback-skip">Not now</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('feedback-copy').addEventListener('click', () => this.copyPromptAndShutdown(submitBar));
+    document.getElementById('feedback-skip').addEventListener('click', () => this.shutdownAndShow(submitBar));
+  },
+
+  async copyPromptAndShutdown(submitBar) {
+    const result = await API.getFeedbackPrompt();
+    await navigator.clipboard.writeText(result.prompt);
+
+    submitBar.innerHTML = `
+      <div class="submit-success">
+        <p>Prompt copied to clipboard.</p>
+        <p class="feedback-message">Server shutting down...</p>
+      </div>
+    `;
+    API.shutdown();
+  },
+
+  shutdownAndShow(submitBar) {
+    submitBar.innerHTML = `
+      <div class="submit-success">
         <p>Server shutting down...</p>
       </div>
     `;
+    API.shutdown();
   },
 };
 

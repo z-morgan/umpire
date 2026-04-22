@@ -36,4 +36,22 @@ const API = {
     });
     return resp.json();
   },
+
+  async recordFeedback({ diff, review }) {
+    const resp = await fetch('/api/record-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diff, review }),
+    });
+    return resp.json();
+  },
+
+  async getFeedbackPrompt() {
+    const resp = await fetch('/api/feedback-prompt');
+    return resp.json();
+  },
+
+  async shutdown() {
+    await fetch('/api/shutdown', { method: 'POST' });
+  },
 };
