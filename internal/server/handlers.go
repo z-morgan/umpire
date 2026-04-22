@@ -6,20 +6,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zmorgan/umpire/internal/feedback"
 	"github.com/zmorgan/umpire/internal/git"
 	"github.com/zmorgan/umpire/internal/review"
 )
 
 // ReviewContext holds the resolved git state for the review session.
 type ReviewContext struct {
-	Repo       *git.Repo
-	BaseRef    string
-	HeadRef    string
-	BaseSHA    string
-	HeadSHA    string
-	MergeBase  string
-	Store      *review.Store
-	OnSubmit   func(path string, commentCount int) // called after review is saved
+	Repo          *git.Repo
+	BaseRef       string
+	HeadRef       string
+	BaseSHA       string
+	HeadSHA       string
+	MergeBase     string
+	Store         *review.Store
+	FeedbackStore *feedback.Store
+	ShutdownFn    func() // called by /api/shutdown to trigger server shutdown
 }
 
 // RegisterAPI registers the API routes on the server's mux.
@@ -30,6 +32,9 @@ func RegisterAPI(mux *http.ServeMux, rc *ReviewContext) {
 	mux.HandleFunc("GET /api/info", rc.handleInfo)
 	mux.HandleFunc("POST /api/review", rc.handleReview)
 	mux.HandleFunc("GET /api/file-lines", rc.handleFileLines)
+	mux.HandleFunc("POST /api/record-feedback", rc.handleRecordFeedback)
+	mux.HandleFunc("GET /api/feedback-prompt", rc.handleFeedbackPrompt)
+	mux.HandleFunc("POST /api/shutdown", rc.handleShutdown)
 }
 
 func (rc *ReviewContext) handleInfo(w http.ResponseWriter, r *http.Request) {
@@ -102,12 +107,7 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]string{"path": path}
-	writeJSON(w, resp)
-
-	if rc.OnSubmit != nil {
-		go rc.OnSubmit(path, len(req.Comments))
-	}
+	writeJSON(w, map[string]string{"path": path})
 }
 
 func (rc *ReviewContext) handleFileLines(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +154,59 @@ func (rc *ReviewContext) handleFileLines(w http.ResponseWriter, r *http.Request)
 		"start": start,
 		"end":   end,
 	})
+}
+
+func (rc *ReviewContext) handleRecordFeedback(w http.ResponseWriter, r *http.Request) {
+	var req feedback.SubmitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	snap := &feedback.Snapshot{
+		RepoPath: rc.Repo.Dir,
+		BaseRef:  rc.BaseRef,
+		HeadRef:  rc.HeadRef,
+		BaseSHA:  rc.BaseSHA,
+		HeadSHA:  rc.HeadSHA,
+		Diff:     req.Diff,
+		Review:   req.Review,
+	}
+
+	if _, err := rc.FeedbackStore.Save(snap); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	count, err := rc.FeedbackStore.Count()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, map[string]any{
+		"count":             count,
+		"threshold_reached": count >= feedback.Threshold,
+	})
+}
+
+func (rc *ReviewContext) handleFeedbackPrompt(w http.ResponseWriter, r *http.Request) {
+	count, err := rc.FeedbackStore.Count()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, map[string]string{
+		"prompt": feedback.GeneratePrompt(count),
+	})
+}
+
+func (rc *ReviewContext) handleShutdown(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	if rc.ShutdownFn != nil {
+		go rc.ShutdownFn()
+	}
 }
 
 func writeJSON(w http.ResponseWriter, data any) {
