@@ -50,7 +50,7 @@ const DiffExpander = {
   },
 
   computeGap(infoRow) {
-    const codeCell = infoRow.querySelector('.d2h-code-line-ctn');
+    const codeCell = infoRow.querySelector('.d2h-code-line');
     if (!codeCell) return null;
 
     const hunkText = codeCell.textContent;
