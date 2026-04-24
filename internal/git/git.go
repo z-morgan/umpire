@@ -60,11 +60,11 @@ func (r *Repo) ResolveSHA(ref string) (string, error) {
 	return r.run("rev-parse", ref)
 }
 
-// CommitsBetween returns commits from base..head in reverse chronological order.
+// CommitsBetween returns commits from base..head in chronological order (oldest first).
 func (r *Repo) CommitsBetween(base, head string) ([]Commit, error) {
 	// Use record separator (\x1e) between commits because the body can contain newlines.
 	// Body is last so SplitN captures it entirely even if it contains field separators.
-	out, err := r.run("log", "--format=%H\x1f%s\x1f%an\x1f%aI\x1f%b\x1e", base+".."+head)
+	out, err := r.run("log", "--reverse", "--format=%H\x1f%s\x1f%an\x1f%aI\x1f%b\x1e", base+".."+head)
 	if err != nil {
 		return nil, err
 	}

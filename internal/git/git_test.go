@@ -131,12 +131,12 @@ func TestCommitsBetween(t *testing.T) {
 	if len(commits) != 2 {
 		t.Fatalf("expected 2 commits, got %d", len(commits))
 	}
-	// Most recent first
-	if commits[0].Subject != "Add world function" {
-		t.Errorf("first commit subject = %q, want %q", commits[0].Subject, "Add world function")
+	// Oldest first
+	if commits[0].Subject != "Add hello function" {
+		t.Errorf("first commit subject = %q, want %q", commits[0].Subject, "Add hello function")
 	}
-	if commits[1].Subject != "Add hello function" {
-		t.Errorf("second commit subject = %q, want %q", commits[1].Subject, "Add hello function")
+	if commits[1].Subject != "Add world function" {
+		t.Errorf("second commit subject = %q, want %q", commits[1].Subject, "Add world function")
 	}
 }
 
@@ -163,8 +163,8 @@ func TestDiffForCommit(t *testing.T) {
 
 	repo := NewRepo(dir)
 	commits, _ := repo.CommitsBetween("main", "feature")
-	// Get diff for "Add hello function" (second in list, oldest)
-	diff, err := repo.DiffForCommit(commits[1].SHA)
+	// Get diff for "Add hello function" (first in list, oldest)
+	diff, err := repo.DiffForCommit(commits[0].SHA)
 	if err != nil {
 		t.Fatal(err)
 	}
