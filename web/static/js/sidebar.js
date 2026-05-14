@@ -1,7 +1,7 @@
 'use strict';
 
 const Sidebar = {
-  mode: 'files',
+  mode: 'commits',
   commits: [],
   files: [],
   activeCommitSHA: null,
@@ -10,8 +10,8 @@ const Sidebar = {
     const sidebar = document.getElementById('sidebar');
     sidebar.innerHTML = `
       <div class="sidebar-tabs">
-        <button class="tab active" data-tab="files">Files changed</button>
-        <button class="tab" data-tab="commits">Commits</button>
+        <button class="tab" data-tab="files">Files changed</button>
+        <button class="tab active" data-tab="commits">Commits</button>
       </div>
       <div id="sidebar-content"></div>
     `;
