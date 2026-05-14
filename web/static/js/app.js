@@ -258,34 +258,38 @@ const App = {
       return;
     }
 
+    const promptResult = await API.getFeedbackPrompt();
+    this.feedbackPrompt = promptResult.prompt;
+
     submitBar.innerHTML = `
       <div class="submit-success">
         ${this.renderSavedPath()}
         <p>Feedback recorded &mdash; ${result.count} snapshots available.</p>
-        <p class="feedback-message">Generate a prompt to analyze your feedback and propose Claude config updates?</p>
+        <p class="feedback-message">Paste this prompt into Claude to analyze your feedback and propose Claude config updates:</p>
+        <div class="feedback-prompt-wrapper">
+          <pre class="feedback-prompt" id="feedback-prompt-text"></pre>
+          <button class="btn btn-save feedback-prompt-copy" id="feedback-copy">Copy</button>
+        </div>
         <div class="feedback-actions">
-          <button class="btn btn-save" id="feedback-copy">Copy Prompt to Clipboard</button>
-          <button class="btn btn-cancel" id="feedback-skip">Not now</button>
+          <button class="btn btn-cancel" id="feedback-done">Done</button>
         </div>
       </div>
     `;
 
-    document.getElementById('feedback-copy').addEventListener('click', () => this.copyPromptAndShutdown(submitBar));
-    document.getElementById('feedback-skip').addEventListener('click', () => this.shutdownAndShow(submitBar));
+    document.getElementById('feedback-prompt-text').textContent = this.feedbackPrompt;
+    document.getElementById('feedback-copy').addEventListener('click', () => this.copyFeedbackPrompt());
+    document.getElementById('feedback-done').addEventListener('click', () => this.shutdownAndShow(submitBar));
   },
 
-  async copyPromptAndShutdown(submitBar) {
-    const result = await API.getFeedbackPrompt();
-    await navigator.clipboard.writeText(result.prompt);
-
-    submitBar.innerHTML = `
-      <div class="submit-success">
-        ${this.renderSavedPath()}
-        <p>Prompt copied to clipboard.</p>
-        <p class="feedback-message">Server shutting down...</p>
-      </div>
-    `;
-    API.shutdown();
+  async copyFeedbackPrompt() {
+    await navigator.clipboard.writeText(this.feedbackPrompt);
+    const btn = document.getElementById('feedback-copy');
+    btn.textContent = 'Copied';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.disabled = false;
+    }, 1500);
   },
 
   shutdownAndShow(submitBar) {

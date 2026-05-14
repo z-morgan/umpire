@@ -686,6 +686,35 @@ tr.d2h-expandable:hover .d2h-code-line-ctn {
   margin-top: 0.5rem;
 }
 
+.feedback-prompt-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.feedback-prompt {
+  flex: 1;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  max-height: 8rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.feedback-prompt-copy {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 /* === Scrollbar === */
 ::-webkit-scrollbar {
   width: 8px;
