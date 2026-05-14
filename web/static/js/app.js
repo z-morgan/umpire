@@ -168,11 +168,19 @@ const App = {
 
     header.append(nav, message);
     this.diffContainer.parentNode.insertBefore(header, this.diffContainer);
+
+    const handle = document.createElement('div');
+    handle.id = 'commit-resize-handle';
+    handle.className = 'resize-handle';
+    this.diffContainer.parentNode.insertBefore(handle, this.diffContainer);
+    Resize.attachCommitHeaderDrag(handle, header);
   },
 
   removeCommitHeader() {
     const existing = document.getElementById('commit-header');
     if (existing) existing.remove();
+    const handle = document.getElementById('commit-resize-handle');
+    if (handle) handle.remove();
   },
 
   renderDiff(diffString) {

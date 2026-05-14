@@ -199,9 +199,7 @@ body {
 #commit-header {
   width: 25vw;
   min-width: 200px;
-  max-width: 400px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
   background: var(--bg-secondary);
   padding: 0.75rem 1rem;
   overflow-y: auto;
@@ -290,7 +288,7 @@ body {
 }
 
 /* === Resize handle === */
-#resize-handle {
+.resize-handle {
   width: 4px;
   cursor: col-resize;
   background: transparent;
@@ -302,8 +300,8 @@ body {
   transition: background 0.15s;
 }
 
-#resize-handle:hover,
-#resize-handle.dragging {
+.resize-handle:hover,
+.resize-handle.dragging {
   background: var(--text-link);
 }
 
