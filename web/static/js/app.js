@@ -215,11 +215,12 @@ const App = {
 
     this.lastReview = { summary, comments };
     const result = await API.submitReview({ summary, comments });
+    this.savedReviewPath = result.path;
 
     const submitBar = document.getElementById('submit-bar');
     submitBar.innerHTML = `
       <div class="submit-success">
-        Review saved to <code>${result.path}</code>
+        ${this.renderSavedPath()}
         <p class="feedback-message">Record this feedback to improve future Claude sessions?</p>
         <div class="feedback-actions">
           <button class="btn btn-save" id="feedback-yes">Yes</button>
@@ -230,6 +231,10 @@ const App = {
 
     document.getElementById('feedback-yes').addEventListener('click', () => this.recordFeedback(submitBar));
     document.getElementById('feedback-no').addEventListener('click', () => this.shutdownAndShow(submitBar));
+  },
+
+  renderSavedPath() {
+    return `<p class="review-saved-path">Review saved to <code>${this.savedReviewPath}</code></p>`;
   },
 
   async recordFeedback(submitBar) {
@@ -244,6 +249,7 @@ const App = {
       const noun = remaining === 1 ? 'review' : 'reviews';
       submitBar.innerHTML = `
         <div class="submit-success">
+          ${this.renderSavedPath()}
           <p>Feedback recorded (${remaining} more ${noun} until analysis is available).</p>
           <p class="feedback-message">Server shutting down...</p>
         </div>
@@ -254,6 +260,7 @@ const App = {
 
     submitBar.innerHTML = `
       <div class="submit-success">
+        ${this.renderSavedPath()}
         <p>Feedback recorded &mdash; ${result.count} snapshots available.</p>
         <p class="feedback-message">Generate a prompt to analyze your feedback and propose Claude config updates?</p>
         <div class="feedback-actions">
@@ -273,6 +280,7 @@ const App = {
 
     submitBar.innerHTML = `
       <div class="submit-success">
+        ${this.renderSavedPath()}
         <p>Prompt copied to clipboard.</p>
         <p class="feedback-message">Server shutting down...</p>
       </div>
@@ -283,6 +291,7 @@ const App = {
   shutdownAndShow(submitBar) {
     submitBar.innerHTML = `
       <div class="submit-success">
+        ${this.renderSavedPath()}
         <p>Server shutting down...</p>
       </div>
     `;
