@@ -2,6 +2,7 @@
 
 const App = {
   diffContainer: null,
+  commitMessageEdits: {},
 
   async init() {
     this.diffContainer = document.getElementById('diff-container');
@@ -145,26 +146,7 @@ const App = {
 
     nav.append(prevBtn, position, nextBtn);
 
-    const message = document.createElement('div');
-    message.className = 'commit-message';
-
-    const shortSHA = commit.sha.substring(0, 7);
-    const subject = document.createElement('h2');
-    subject.className = 'commit-message-subject';
-    subject.textContent = commit.subject;
-
-    const meta = document.createElement('div');
-    meta.className = 'commit-message-meta';
-    meta.innerHTML = `<span class="commit-sha">${shortSHA}</span> ${Sidebar.escapeHTML(commit.author)} &middot; ${commit.date}`;
-
-    message.append(subject, meta);
-
-    if (commit.body) {
-      const body = document.createElement('pre');
-      body.className = 'commit-message-body';
-      body.textContent = commit.body;
-      message.append(body);
-    }
+    const message = this.buildCommitMessageView(commit);
 
     header.append(nav, message);
     this.diffContainer.parentNode.insertBefore(header, this.diffContainer);
@@ -174,6 +156,143 @@ const App = {
     handle.className = 'resize-handle';
     this.diffContainer.parentNode.insertBefore(handle, this.diffContainer);
     Resize.attachCommitHeaderDrag(handle, header);
+  },
+
+  buildCommitMessageView(commit) {
+    const edit = this.commitMessageEdits[commit.sha];
+    const displaySubject = edit ? edit.subject : commit.subject;
+    const displayBody = edit ? edit.body : (commit.body || '');
+
+    const message = document.createElement('div');
+    message.className = 'commit-message';
+
+    const messageHeader = document.createElement('div');
+    messageHeader.className = 'commit-message-header';
+
+    const subject = document.createElement('h2');
+    subject.className = 'commit-message-subject';
+    subject.textContent = displaySubject;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn commit-message-edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => this.startEditingCommitMessage(commit));
+
+    messageHeader.append(subject, editBtn);
+
+    const shortSHA = commit.sha.substring(0, 7);
+    const meta = document.createElement('div');
+    meta.className = 'commit-message-meta';
+    meta.innerHTML = `<span class="commit-sha">${shortSHA}</span> ${Sidebar.escapeHTML(commit.author)} &middot; ${commit.date}`;
+
+    if (edit) {
+      const editedBadge = document.createElement('span');
+      editedBadge.className = 'commit-message-edited';
+      editedBadge.textContent = 'edited';
+      meta.append(' ', editedBadge);
+    }
+
+    message.append(messageHeader, meta);
+
+    if (displayBody) {
+      const body = document.createElement('pre');
+      body.className = 'commit-message-body';
+      body.textContent = displayBody;
+      message.append(body);
+    }
+
+    return message;
+  },
+
+  buildCommitMessageEditor(commit) {
+    const edit = this.commitMessageEdits[commit.sha];
+    const currentSubject = edit ? edit.subject : commit.subject;
+    const currentBody = edit ? edit.body : (commit.body || '');
+
+    const message = document.createElement('div');
+    message.className = 'commit-message commit-message-editing';
+
+    const subjectInput = document.createElement('input');
+    subjectInput.type = 'text';
+    subjectInput.className = 'commit-message-subject-input';
+    subjectInput.value = currentSubject;
+
+    const bodyTextarea = document.createElement('textarea');
+    bodyTextarea.className = 'commit-message-body-input';
+    bodyTextarea.value = currentBody;
+    bodyTextarea.rows = 8;
+    bodyTextarea.placeholder = 'Body (optional)';
+
+    const actions = document.createElement('div');
+    actions.className = 'commit-message-edit-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      this.saveCommitMessageEdit(commit, subjectInput.value, bodyTextarea.value);
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => this.exitCommitMessageEditor(commit));
+
+    actions.append(saveBtn, cancelBtn);
+
+    if (edit) {
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn btn-cancel';
+      resetBtn.textContent = 'Reset to original';
+      resetBtn.addEventListener('click', () => {
+        delete this.commitMessageEdits[commit.sha];
+        this.exitCommitMessageEditor(commit);
+      });
+      actions.append(resetBtn);
+    }
+
+    message.append(subjectInput, bodyTextarea, actions);
+    return message;
+  },
+
+  startEditingCommitMessage(commit) {
+    const header = document.getElementById('commit-header');
+    if (!header) return;
+    const existingMessage = header.querySelector('.commit-message');
+    if (!existingMessage) return;
+
+    const editor = this.buildCommitMessageEditor(commit);
+    existingMessage.replaceWith(editor);
+    editor.querySelector('.commit-message-subject-input').focus();
+  },
+
+  exitCommitMessageEditor(commit) {
+    const header = document.getElementById('commit-header');
+    if (!header) return;
+    const editor = header.querySelector('.commit-message-editing');
+    if (!editor) return;
+
+    editor.replaceWith(this.buildCommitMessageView(commit));
+  },
+
+  saveCommitMessageEdit(commit, subject, body) {
+    const trimmedSubject = subject.trim();
+    const trimmedBody = body.trim();
+
+    if (!trimmedSubject) {
+      alert('Subject cannot be empty.');
+      return;
+    }
+
+    if (trimmedSubject === commit.subject && trimmedBody === (commit.body || '')) {
+      delete this.commitMessageEdits[commit.sha];
+    } else {
+      this.commitMessageEdits[commit.sha] = {
+        subject: trimmedSubject,
+        body: trimmedBody,
+      };
+    }
+    this.exitCommitMessageEditor(commit);
   },
 
   removeCommitHeader() {

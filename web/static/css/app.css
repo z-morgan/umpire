@@ -256,13 +256,73 @@ body {
   padding: 0.75rem 1rem;
 }
 
+.commit-message-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
 .commit-message-subject {
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 0.35rem;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+.commit-message-edit-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.commit-message-edit-btn:hover {
+  background: var(--bg-hover);
+}
+
+.commit-message-edited {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+.commit-message-subject-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.commit-message-body-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.4rem 0.5rem;
+  resize: vertical;
+}
+
+.commit-message-edit-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .commit-message-meta {
