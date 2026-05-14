@@ -9,6 +9,11 @@ const DiffExpander = {
         const infoCell = row.querySelector('.d2h-info');
         if (!infoCell) return;
 
+        const gap = this.computeGap(row);
+        if (!gap || gap.start > gap.end) return;
+
+        row.dataset.gapStart = gap.start;
+        row.dataset.gapEnd = gap.end;
         row.classList.add('d2h-expandable');
         row.addEventListener('click', () => this.handleExpand(row));
       });
@@ -23,15 +28,16 @@ const DiffExpander = {
     if (!nameEl) return;
     const filePath = nameEl.textContent.trim();
 
-    const gap = this.computeGap(infoRow);
-    if (!gap || gap.start > gap.end) {
+    const gapStart = parseInt(infoRow.dataset.gapStart, 10);
+    const gapEnd = parseInt(infoRow.dataset.gapEnd, 10);
+    if (isNaN(gapStart) || isNaN(gapEnd) || gapStart > gapEnd) {
       infoRow.remove();
       return;
     }
 
     const ref = Sidebar.activeCommitSHA || App.info.head_sha;
-    const fetchStart = Math.max(gap.start, gap.end - this.BATCH_SIZE + 1);
-    const fetchEnd = gap.end;
+    const fetchStart = Math.max(gapStart, gapEnd - this.BATCH_SIZE + 1);
+    const fetchEnd = gapEnd;
 
     const data = await API.getFileLines(ref, filePath, fetchStart, fetchEnd);
 
@@ -42,10 +48,10 @@ const DiffExpander = {
       tbody.insertBefore(contextRow, infoRow);
     }
 
-    // Remove the info row if the gap is fully consumed
-    const remainingGap = { start: gap.start, end: fetchStart - 1 };
-    if (remainingGap.start > remainingGap.end) {
+    if (fetchStart <= gapStart) {
       infoRow.remove();
+    } else {
+      infoRow.dataset.gapEnd = fetchStart - 1;
     }
   },
 
