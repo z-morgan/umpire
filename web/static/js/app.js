@@ -16,10 +16,19 @@ const App = {
     this.initKeyboardShortcuts();
     Resize.init();
 
-    await Promise.all([
-      this.loadFullDiff(),
-      Sidebar.init(),
-    ]);
+    await Sidebar.init();
+    const firstCommit = Sidebar.commits[0];
+    if (firstCommit) {
+      Sidebar.activeCommitSHA = firstCommit.sha;
+      Sidebar.render();
+      const [fullDiff] = await Promise.all([
+        API.getDiff(),
+        this.loadCommitDiff(firstCommit.sha),
+      ]);
+      this.fullDiff = fullDiff;
+    } else {
+      await this.loadFullDiff();
+    }
   },
 
   initSubmitBar() {
