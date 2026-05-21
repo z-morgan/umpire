@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zmorgan/umpire/internal/feedback"
 	"github.com/zmorgan/umpire/internal/git"
 )
 
@@ -65,6 +67,12 @@ func gitRun(t *testing.T, dir string, args ...string) {
 
 func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	ts, _ := setupTestServerWithContext(t)
+	return ts
+}
+
+func setupTestServerWithContext(t *testing.T) (*httptest.Server, *ReviewContext) {
+	t.Helper()
 	repo := setupTestRepo(t)
 
 	baseSHA, err := repo.ResolveSHA("main")
@@ -81,17 +89,18 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	}
 
 	rc := &ReviewContext{
-		Repo:      repo,
-		BaseRef:   "main",
-		HeadRef:   "feature",
-		BaseSHA:   baseSHA,
-		HeadSHA:   headSHA,
-		MergeBase: mergeBase,
+		Repo:          repo,
+		BaseRef:       "main",
+		HeadRef:       "feature",
+		BaseSHA:       baseSHA,
+		HeadSHA:       headSHA,
+		MergeBase:     mergeBase,
+		FeedbackStore: &feedback.Store{Dir: t.TempDir()},
 	}
 
 	mux := http.NewServeMux()
 	RegisterAPI(mux, rc)
-	return httptest.NewServer(mux)
+	return httptest.NewServer(mux), rc
 }
 
 func TestHandleInfo(t *testing.T) {
@@ -203,5 +212,71 @@ func TestHandleFiles(t *testing.T) {
 	}
 	if files[0].Path != "hello.go" {
 		t.Errorf("path = %q, want hello.go", files[0].Path)
+	}
+}
+
+func TestHandleRecordFeedbackIncludesCommitMessageEdits(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	body := feedback.SubmitRequest{
+		Diff: "diff --git a/hello.go b/hello.go\n",
+		Review: feedback.Review{
+			Summary: "Tweak the commit message.",
+		},
+		CommitMessageEdits: []feedback.CommitMessageEdit{
+			{
+				SHA:             "deadbeef",
+				OriginalSubject: "wip",
+				OriginalBody:    "",
+				EditedSubject:   "Add hello function",
+				EditedBody:      "Returns a friendly greeting.",
+			},
+		},
+	}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/api/record-feedback", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	// Find the snapshot file the handler just wrote and verify the edits round-tripped.
+	matches, err := filepath.Glob(filepath.Join(rc.FeedbackStore.Dir, "snapshot-*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 snapshot file, got %d", len(matches))
+	}
+
+	data, err := os.ReadFile(matches[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snap feedback.Snapshot
+	if err := json.Unmarshal(data, &snap); err != nil {
+		t.Fatal(err)
+	}
+	if len(snap.CommitMessageEdits) != 1 {
+		t.Fatalf("len(CommitMessageEdits) = %d, want 1", len(snap.CommitMessageEdits))
+	}
+	edit := snap.CommitMessageEdits[0]
+	if edit.SHA != "deadbeef" {
+		t.Errorf("SHA = %q, want deadbeef", edit.SHA)
+	}
+	if edit.EditedSubject != "Add hello function" {
+		t.Errorf("EditedSubject = %q, want %q", edit.EditedSubject, "Add hello function")
+	}
+	if edit.OriginalSubject != "wip" {
+		t.Errorf("OriginalSubject = %q, want %q", edit.OriginalSubject, "wip")
 	}
 }

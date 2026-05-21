@@ -304,6 +304,21 @@ const App = {
     this.exitCommitMessageEditor(commit);
   },
 
+  collectCommitMessageEdits() {
+    const edits = [];
+    for (const [sha, edit] of Object.entries(this.commitMessageEdits)) {
+      const original = Sidebar.commits.find(c => c.sha === sha);
+      edits.push({
+        sha,
+        original_subject: original ? original.subject : '',
+        original_body: original ? (original.body || '') : '',
+        edited_subject: edit.subject,
+        edited_body: edit.body,
+      });
+    }
+    return edits;
+  },
+
   removeCommitHeader() {
     const existing = document.getElementById('commit-header');
     if (existing) existing.remove();
@@ -379,6 +394,7 @@ const App = {
     const result = await API.recordFeedback({
       diff: this.fullDiff || '',
       review: { summary: review.summary, comments: review.comments },
+      commit_message_edits: this.collectCommitMessageEdits(),
     });
 
     if (!result.threshold_reached) {
