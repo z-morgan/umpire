@@ -41,10 +41,11 @@ const DiffExpander = {
 
     const data = await API.getFileLines(ref, filePath, fetchStart, fetchEnd);
 
+    const language = this.resolveLanguage(fileWrapper);
     const tbody = infoRow.closest('tbody');
     for (let i = 0; i < data.lines.length; i++) {
       const lineNum = data.start + i;
-      const contextRow = this.buildContextRow(lineNum, data.lines[i]);
+      const contextRow = this.buildContextRow(lineNum, data.lines[i], language);
       tbody.insertBefore(contextRow, infoRow);
     }
 
@@ -95,7 +96,7 @@ const DiffExpander = {
     return 0;
   },
 
-  buildContextRow(lineNum, content) {
+  buildContextRow(lineNum, content, language) {
     const tr = document.createElement('tr');
 
     const lineNumTd = document.createElement('td');
@@ -120,7 +121,7 @@ const DiffExpander = {
 
     const contentSpan = document.createElement('span');
     contentSpan.className = 'd2h-code-line-ctn';
-    contentSpan.textContent = ' ' + content;
+    this.applyHighlight(contentSpan, ' ' + content, language);
 
     codeDiv.appendChild(contentSpan);
     codeTd.appendChild(codeDiv);
@@ -129,5 +130,25 @@ const DiffExpander = {
     tr.appendChild(codeTd);
 
     return tr;
+  },
+
+  resolveLanguage(fileWrapper) {
+    if (typeof hljs === 'undefined') return null;
+    const lang = fileWrapper.getAttribute('data-lang');
+    if (lang && hljs.getLanguage(lang)) return lang;
+    return null;
+  },
+
+  applyHighlight(span, text, language) {
+    if (!language) {
+      span.textContent = text;
+      return;
+    }
+    const result = hljs.highlight(text, { language, ignoreIllegals: true });
+    span.innerHTML = result.value;
+    span.classList.add('hljs');
+    if (result.language) {
+      span.classList.add(result.language);
+    }
   },
 };
