@@ -22,6 +22,7 @@
   --removed-bg: rgba(248, 81, 73, 0.15);
   --added-highlight: rgba(63, 185, 80, 0.3);
   --removed-highlight: rgba(248, 81, 73, 0.3);
+  --submit-bar-height: 80px;
 }
 
 body {
@@ -72,7 +73,7 @@ body {
 /* === Layout === */
 #layout {
   display: flex;
-  min-height: calc(100vh - 50px - 80px);
+  min-height: calc(100vh - 50px - var(--submit-bar-height));
 }
 
 /* === Sidebar === */
@@ -85,7 +86,7 @@ body {
   flex-shrink: 0;
   position: sticky;
   top: 50px;
-  height: calc(100vh - 50px - 80px);
+  height: calc(100vh - 50px - var(--submit-bar-height));
 }
 
 .sidebar-tabs {
@@ -205,7 +206,7 @@ body {
   overflow-y: auto;
   position: sticky;
   top: 50px;
-  height: calc(100vh - 50px - 80px);
+  height: calc(100vh - 50px - var(--submit-bar-height));
   box-sizing: border-box;
 }
 
@@ -354,7 +355,7 @@ body {
   background: transparent;
   position: sticky;
   top: 50px;
-  height: calc(100vh - 50px - 80px);
+  height: calc(100vh - 50px - var(--submit-bar-height));
   flex-shrink: 0;
   z-index: 10;
   transition: background 0.15s;
@@ -365,8 +366,30 @@ body {
   background: var(--text-link);
 }
 
+.resize-handle-vertical {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+  background: transparent;
+  z-index: 11;
+  transition: background 0.15s;
+}
+
+.resize-handle-vertical:hover,
+.resize-handle-vertical.dragging {
+  background: var(--text-link);
+}
+
 body.resizing {
   cursor: col-resize;
+  user-select: none;
+}
+
+body.resizing-vertical {
+  cursor: row-resize;
   user-select: none;
 }
 
@@ -374,7 +397,7 @@ body.resizing {
 #diff-container {
   flex: 1;
   overflow-x: auto;
-  padding-bottom: 100px;
+  padding-bottom: calc(var(--submit-bar-height) + 20px);
 }
 
 .empty-diff {

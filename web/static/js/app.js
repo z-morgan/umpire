@@ -354,6 +354,7 @@ const App = {
     this.savedReviewPath = result.path;
 
     const submitBar = document.getElementById('submit-bar');
+    document.documentElement.style.removeProperty('--submit-bar-height');
     submitBar.innerHTML = `
       <div class="submit-success">
         ${this.renderSavedPath()}
