@@ -354,9 +354,10 @@ const App = {
   async submitReview() {
     const summary = document.getElementById('review-summary').value.trim();
     const comments = ReviewState.getAllComments();
+    const commitMessageEdits = this.collectCommitMessageEdits();
 
-    if (!summary && comments.length === 0) {
-      alert('Add a summary or comments before submitting.');
+    if (!summary && comments.length === 0 && commitMessageEdits.length === 0) {
+      alert('Add a summary, comments, or a commit message edit before submitting.');
       return;
     }
 
@@ -365,7 +366,11 @@ const App = {
     submitBtn.textContent = 'Submitting...';
 
     this.lastReview = { summary, comments };
-    const result = await API.submitReview({ summary, comments });
+    const result = await API.submitReview({
+      summary,
+      comments,
+      commit_message_edits: commitMessageEdits,
+    });
     this.savedReviewPath = result.path;
 
     const submitBar = document.getElementById('submit-bar');
