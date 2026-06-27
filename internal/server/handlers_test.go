@@ -14,6 +14,7 @@ import (
 
 	"github.com/zmorgan/umpire/internal/feedback"
 	"github.com/zmorgan/umpire/internal/git"
+	"github.com/zmorgan/umpire/internal/review"
 )
 
 func setupTestRepo(t *testing.T) *git.Repo {
@@ -95,6 +96,7 @@ func setupTestServerWithContext(t *testing.T) (*httptest.Server, *ReviewContext)
 		BaseSHA:       baseSHA,
 		HeadSHA:       headSHA,
 		MergeBase:     mergeBase,
+		Store:         &review.Store{Dir: t.TempDir()},
 		FeedbackStore: &feedback.Store{Dir: t.TempDir()},
 	}
 
@@ -212,6 +214,69 @@ func TestHandleFiles(t *testing.T) {
 	}
 	if files[0].Path != "hello.go" {
 		t.Errorf("path = %q, want hello.go", files[0].Path)
+	}
+}
+
+func TestHandleReviewPersistsCommitMessageEdits(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	body := review.SubmitRequest{
+		Summary: "Reword the commit message.",
+		CommitMessageEdits: []review.CommitMessageEdit{
+			{
+				SHA:             "deadbeef",
+				OriginalSubject: "wip",
+				OriginalBody:    "",
+				EditedSubject:   "Add hello function",
+				EditedBody:      "Returns a friendly greeting.",
+			},
+		},
+	}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/api/review", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	// Find the review file the handler just wrote and verify the edits persisted.
+	matches, err := filepath.Glob(filepath.Join(rc.Store.Dir, "review-*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 review file, got %d", len(matches))
+	}
+
+	data, err := os.ReadFile(matches[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rev review.Review
+	if err := json.Unmarshal(data, &rev); err != nil {
+		t.Fatal(err)
+	}
+	if len(rev.CommitMessageEdits) != 1 {
+		t.Fatalf("len(CommitMessageEdits) = %d, want 1", len(rev.CommitMessageEdits))
+	}
+	edit := rev.CommitMessageEdits[0]
+	if edit.SHA != "deadbeef" {
+		t.Errorf("SHA = %q, want deadbeef", edit.SHA)
+	}
+	if edit.EditedSubject != "Add hello function" {
+		t.Errorf("EditedSubject = %q, want %q", edit.EditedSubject, "Add hello function")
+	}
+	if edit.OriginalSubject != "wip" {
+		t.Errorf("OriginalSubject = %q, want %q", edit.OriginalSubject, "wip")
 	}
 }
 

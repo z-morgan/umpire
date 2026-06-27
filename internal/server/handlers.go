@@ -93,12 +93,13 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rev := &review.Review{
-		BaseRef:  rc.BaseRef,
-		HeadRef:  rc.HeadRef,
-		BaseSHA:  rc.BaseSHA,
-		HeadSHA:  rc.HeadSHA,
-		Summary:  req.Summary,
-		Comments: req.Comments,
+		BaseRef:            rc.BaseRef,
+		HeadRef:            rc.HeadRef,
+		BaseSHA:            rc.BaseSHA,
+		HeadSHA:            rc.HeadSHA,
+		Summary:            req.Summary,
+		Comments:           req.Comments,
+		CommitMessageEdits: req.CommitMessageEdits,
 	}
 
 	path, err := rc.Store.Save(rev)
