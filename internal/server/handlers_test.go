@@ -280,23 +280,14 @@ func TestHandleReviewPersistsCommitMessageEdits(t *testing.T) {
 	}
 }
 
-func TestHandleRecordFeedbackIncludesCommitMessageEdits(t *testing.T) {
+func TestHandleRecordFeedbackPersistsSnapshot(t *testing.T) {
 	ts, rc := setupTestServerWithContext(t)
 	defer ts.Close()
 
 	body := feedback.SubmitRequest{
 		Diff: "diff --git a/hello.go b/hello.go\n",
 		Review: feedback.Review{
-			Summary: "Tweak the commit message.",
-		},
-		CommitMessageEdits: []feedback.CommitMessageEdit{
-			{
-				SHA:             "deadbeef",
-				OriginalSubject: "wip",
-				OriginalBody:    "",
-				EditedSubject:   "Add hello function",
-				EditedBody:      "Returns a friendly greeting.",
-			},
+			Summary: "Naming could be clearer.",
 		},
 	}
 	payload, err := json.Marshal(body)
@@ -314,7 +305,7 @@ func TestHandleRecordFeedbackIncludesCommitMessageEdits(t *testing.T) {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
 	}
 
-	// Find the snapshot file the handler just wrote and verify the edits round-tripped.
+	// Find the snapshot file the handler just wrote and verify it captured the review.
 	matches, err := filepath.Glob(filepath.Join(rc.FeedbackStore.Dir, "snapshot-*.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -331,17 +322,10 @@ func TestHandleRecordFeedbackIncludesCommitMessageEdits(t *testing.T) {
 	if err := json.Unmarshal(data, &snap); err != nil {
 		t.Fatal(err)
 	}
-	if len(snap.CommitMessageEdits) != 1 {
-		t.Fatalf("len(CommitMessageEdits) = %d, want 1", len(snap.CommitMessageEdits))
+	if snap.Review.Summary != "Naming could be clearer." {
+		t.Errorf("Review.Summary = %q, want %q", snap.Review.Summary, "Naming could be clearer.")
 	}
-	edit := snap.CommitMessageEdits[0]
-	if edit.SHA != "deadbeef" {
-		t.Errorf("SHA = %q, want deadbeef", edit.SHA)
-	}
-	if edit.EditedSubject != "Add hello function" {
-		t.Errorf("EditedSubject = %q, want %q", edit.EditedSubject, "Add hello function")
-	}
-	if edit.OriginalSubject != "wip" {
-		t.Errorf("OriginalSubject = %q, want %q", edit.OriginalSubject, "wip")
+	if snap.Diff != "diff --git a/hello.go b/hello.go\n" {
+		t.Errorf("Diff = %q, want the submitted diff", snap.Diff)
 	}
 }

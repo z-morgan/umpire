@@ -399,7 +399,6 @@ const App = {
     const result = await API.recordFeedback({
       diff: this.fullDiff || '',
       review: { summary: review.summary, comments: review.comments },
-      commit_message_edits: this.collectCommitMessageEdits(),
     });
 
     if (!result.threshold_reached) {

@@ -37,11 +37,11 @@ const API = {
     return resp.json();
   },
 
-  async recordFeedback({ diff, review, commit_message_edits }) {
+  async recordFeedback({ diff, review }) {
     const resp = await fetch('/api/record-feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ diff, review, commit_message_edits }),
+      body: JSON.stringify({ diff, review }),
     });
     return resp.json();
   },

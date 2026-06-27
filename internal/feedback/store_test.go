@@ -33,15 +33,6 @@ func TestSave(t *testing.T) {
 				},
 			},
 		},
-		CommitMessageEdits: []CommitMessageEdit{
-			{
-				SHA:             "def456",
-				OriginalSubject: "wip",
-				OriginalBody:    "",
-				EditedSubject:   "Add hello function",
-				EditedBody:      "Returns a friendly greeting.",
-			},
-		},
 	}
 
 	path, err := store.Save(snap)
@@ -80,22 +71,6 @@ func TestSave(t *testing.T) {
 	}
 	if loaded.Review.Comments[0].Body != "Use a descriptive name here" {
 		t.Errorf("Comment body = %q, want %q", loaded.Review.Comments[0].Body, "Use a descriptive name here")
-	}
-	if len(loaded.CommitMessageEdits) != 1 {
-		t.Fatalf("len(CommitMessageEdits) = %d, want 1", len(loaded.CommitMessageEdits))
-	}
-	edit := loaded.CommitMessageEdits[0]
-	if edit.SHA != "def456" {
-		t.Errorf("edit.SHA = %q, want def456", edit.SHA)
-	}
-	if edit.OriginalSubject != "wip" {
-		t.Errorf("edit.OriginalSubject = %q, want %q", edit.OriginalSubject, "wip")
-	}
-	if edit.EditedSubject != "Add hello function" {
-		t.Errorf("edit.EditedSubject = %q, want %q", edit.EditedSubject, "Add hello function")
-	}
-	if edit.EditedBody != "Returns a friendly greeting." {
-		t.Errorf("edit.EditedBody = %q, want %q", edit.EditedBody, "Returns a friendly greeting.")
 	}
 }
 

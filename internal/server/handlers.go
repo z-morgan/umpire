@@ -165,14 +165,13 @@ func (rc *ReviewContext) handleRecordFeedback(w http.ResponseWriter, r *http.Req
 	}
 
 	snap := &feedback.Snapshot{
-		RepoPath:           rc.Repo.Dir,
-		BaseRef:            rc.BaseRef,
-		HeadRef:            rc.HeadRef,
-		BaseSHA:            rc.BaseSHA,
-		HeadSHA:            rc.HeadSHA,
-		Diff:               req.Diff,
-		Review:             req.Review,
-		CommitMessageEdits: req.CommitMessageEdits,
+		RepoPath: rc.Repo.Dir,
+		BaseRef:  rc.BaseRef,
+		HeadRef:  rc.HeadRef,
+		BaseSHA:  rc.BaseSHA,
+		HeadSHA:  rc.HeadSHA,
+		Diff:     req.Diff,
+		Review:   req.Review,
 	}
 
 	if _, err := rc.FeedbackStore.Save(snap); err != nil {
