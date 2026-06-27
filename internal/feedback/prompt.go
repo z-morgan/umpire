@@ -11,7 +11,7 @@ func GeneratePrompt(count int) string {
 	return fmt.Sprintf(`I have %d code-review feedback snapshots saved in ~/.umpire/feedback/ that I'd like you to analyze. Each snapshot is a JSON file containing a diff I reviewed plus my review comments. Please do the following:
 
 1. Read all snapshot-*.json files in ~/.umpire/feedback/.
-2. For each snapshot, study the diff, my review comments, and any commit message edits (the "commit_message_edits" array shows my rewritten subject/body next to the original) to understand what I was correcting or requesting.
+2. For each snapshot, study the diff and my review comments to understand what I was correcting or requesting.
 3. Classify each piece of feedback as either a **generalizable preference** (naming conventions, error handling style, architectural patterns, testing expectations, code organization) or a **one-off correction** (typo, specific bug fix, context-dependent change). Only generalizable preferences should produce config changes.
 4. Look for recurring themes across the snapshots. Group related feedback into categories.
 5. Read my existing user-level Claude configuration:
