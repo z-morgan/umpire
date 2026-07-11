@@ -55,8 +55,11 @@ umpire --base main --head feature/auth
 ## Features
 
 - Commit-by-commit or full-diff view with syntax-highlighted diffs
+- Expand additional context lines around any hunk
 - Inline commenting on any diff line
-- Review summary with submit
-- Dark mode (toggle with `d`, or follows system preference)
-- Keyboard shortcuts: `j`/`k` to navigate files, `n`/`p` for commits
-- Reviews saved as JSON for scripting and CI integration
+- Propose commit message rewrites (subject and body) alongside your review
+- Resizable sidebar and commit-message panes
+- Review summary with submit, saved as JSON for scripting and CI integration
+- Optional feedback capture after submitting: record your reviews and generate a prompt for Claude to propose config improvements
+- Dark theme UI
+- Keyboard shortcuts: `j`/`k` to navigate files, `←`/`→` to move between commits
