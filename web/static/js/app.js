@@ -386,12 +386,29 @@ const App = {
       </div>
     `;
 
+    this.attachSavedPathCopy();
     document.getElementById('feedback-yes').addEventListener('click', () => this.recordFeedback(submitBar));
     document.getElementById('feedback-no').addEventListener('click', () => this.shutdownAndShow(submitBar));
   },
 
   renderSavedPath() {
-    return `<p class="review-saved-path">Review saved to <code>${this.savedReviewPath}</code></p>`;
+    return `<p class="review-saved-path">Review saved to <code>${this.savedReviewPath}</code><button class="btn-link review-path-copy" id="copy-review-path">Copy</button></p>`;
+  },
+
+  attachSavedPathCopy() {
+    const btn = document.getElementById('copy-review-path');
+    if (btn) btn.addEventListener('click', () => this.copyReviewPath());
+  },
+
+  async copyReviewPath() {
+    await navigator.clipboard.writeText(this.savedReviewPath);
+    const btn = document.getElementById('copy-review-path');
+    btn.textContent = 'Copied';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.disabled = false;
+    }, 1500);
   },
 
   async recordFeedback(submitBar) {
@@ -411,6 +428,7 @@ const App = {
           <p class="feedback-message">Server shutting down...</p>
         </div>
       `;
+      this.attachSavedPathCopy();
       API.shutdown();
       return;
     }
@@ -433,6 +451,7 @@ const App = {
       </div>
     `;
 
+    this.attachSavedPathCopy();
     document.getElementById('feedback-prompt-text').textContent = this.feedbackPrompt;
     document.getElementById('feedback-copy').addEventListener('click', () => this.copyFeedbackPrompt());
     document.getElementById('feedback-done').addEventListener('click', () => this.shutdownAndShow(submitBar));
@@ -456,6 +475,7 @@ const App = {
         <p>Server shutting down...</p>
       </div>
     `;
+    this.attachSavedPathCopy();
     API.shutdown();
   },
 };

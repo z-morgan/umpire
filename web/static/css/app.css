@@ -749,6 +749,16 @@ tr.d2h-expandable:hover .d2h-code-line-ctn {
   font-size: 0.85rem;
 }
 
+.review-path-copy {
+  margin-left: 0.5rem;
+}
+
+.review-path-copy:disabled {
+  color: var(--text-secondary);
+  cursor: default;
+  text-decoration: none;
+}
+
 .submit-success p {
   color: var(--text-secondary);
   font-size: 0.8rem;
