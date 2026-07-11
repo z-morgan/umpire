@@ -89,6 +89,8 @@ const App = {
 
     if (nextIndex < -1 || nextIndex >= commits.length) return;
 
+    this.flushPendingEdits();
+
     if (nextIndex === -1) {
       Sidebar.activeCommitSHA = null;
       Sidebar.switchTab('commits');
@@ -100,6 +102,31 @@ const App = {
     }
 
     window.scrollTo({ top: 0 });
+  },
+
+  // Persist any in-progress edits before navigating away, as if each editor's
+  // Save button were clicked. Only an explicit Cancel discards a change.
+  flushPendingEdits() {
+    this.flushCommitMessageEditor();
+    this.flushOpenCommentForms();
+  },
+
+  flushCommitMessageEditor() {
+    const header = document.getElementById('commit-header');
+    if (!header) return;
+    const editor = header.querySelector('.commit-message-editing');
+    if (!editor) return;
+
+    const commit = Sidebar.commits.find(c => c.sha === Sidebar.activeCommitSHA);
+    if (!commit) return;
+
+    const subject = editor.querySelector('.commit-message-subject-input').value;
+    const body = editor.querySelector('.commit-message-body-input').value;
+    this.persistCommitMessageEdit(commit, subject, body);
+  },
+
+  flushOpenCommentForms() {
+    document.querySelectorAll('.comment-form .btn-save').forEach(btn => btn.click());
   },
 
   updateCommentCount() {
@@ -285,13 +312,22 @@ const App = {
   },
 
   saveCommitMessageEdit(commit, subject, body) {
-    const trimmedSubject = subject.trim();
-    const trimmedBody = body.trim();
-
-    if (!trimmedSubject) {
+    if (!subject.trim()) {
       alert('Subject cannot be empty.');
       return;
     }
+    this.persistCommitMessageEdit(commit, subject, body);
+    this.exitCommitMessageEditor(commit);
+  },
+
+  // Records an edit, or clears it when the text matches the original commit.
+  // Returns false without touching state for an empty subject, since that
+  // isn't a savable commit message.
+  persistCommitMessageEdit(commit, subject, body) {
+    const trimmedSubject = subject.trim();
+    const trimmedBody = body.trim();
+
+    if (!trimmedSubject) return false;
 
     if (trimmedSubject === commit.subject && trimmedBody === (commit.body || '')) {
       delete this.commitMessageEdits[commit.sha];
@@ -301,7 +337,7 @@ const App = {
         body: trimmedBody,
       };
     }
-    this.exitCommitMessageEditor(commit);
+    return true;
   },
 
   collectCommitMessageEdits() {

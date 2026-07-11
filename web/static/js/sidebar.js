@@ -101,6 +101,7 @@ const Sidebar = {
 
     container.querySelectorAll('.commit-item').forEach(item => {
       item.addEventListener('click', () => {
+        App.flushPendingEdits();
         const sha = item.dataset.sha || null;
         this.activeCommitSHA = sha;
         this.render();
