@@ -1,6 +1,6 @@
 # umpire
 
-Local code review tool. Umpire gives you a GitHub-like review UI in the browser for reviewing feature branch commits before pushing.
+Umpire is a local code review UI that aggregates your feedback to give back to your AI coding agent. It also tracks your feedback across sessions so you can teach your agent to align with your preferences over time.
 
 ## Install
 
@@ -61,5 +61,4 @@ umpire --base main --head feature/auth
 - Resizable sidebar and commit-message panes
 - Review summary with submit, saved as JSON for scripting and CI integration
 - Optional feedback capture after submitting: record your reviews and generate a prompt for Claude to propose config improvements
-- Dark theme UI
 - Keyboard shortcuts: `j`/`k` to navigate files, `←`/`→` to move between commits
