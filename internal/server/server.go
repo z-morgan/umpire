@@ -18,7 +18,7 @@ type Server struct {
 
 // New creates a new Server on the given port. Port 0 picks an available port.
 func New(port int) (*Server, error) {
-	addr := fmt.Sprintf(":%d", port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("listen on %s: %w", addr, err)
