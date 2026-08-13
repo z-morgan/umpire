@@ -12,29 +12,20 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
-## Landing the Plane (Session Completion)
+## Wrapping up a work session
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+When you're ending a session, it helps to leave the repo tidy for whoever
+picks it up next:
 
-**MANDATORY WORKFLOW:**
+1. **File issues for remaining work** - Create issues for anything that needs follow-up.
+2. **Run quality gates** (if code changed) - Tests, linters, builds.
+3. **Update issue status** - Close finished work, update in-progress items.
+4. **Commit locally** - Commit your work and run `bd sync` to record the issue ledger.
+5. **Hand off** - Leave context for the next session.
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+Umpire is a shared repo, so treat this file as guidance rather than
+orders. In particular, leave the push to the human: commit locally and
+let the maintainer review and push when they're ready. If you clone this
+repo and your own agent reads this file, that's the norm we'd suggest,
+not one we're imposing.
 
