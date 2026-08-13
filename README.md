@@ -8,12 +8,6 @@ Local code review tool. Umpire gives you a GitHub-like review UI in the browser 
 brew install z-morgan/tap/umpire
 ```
 
-Or with Go:
-
-```
-go install github.com/zmorgan/umpire@latest
-```
-
 ## Usage
 
 Run from any git repository:
