@@ -14,6 +14,7 @@ import (
 type Server struct {
 	httpServer *http.Server
 	listener   net.Listener
+	mux        *http.ServeMux
 }
 
 // New creates a new Server on the given port. Port 0 picks an available port.
@@ -34,8 +35,9 @@ func New(port int) (*Server, error) {
 	mux.Handle("/", http.FileServer(http.FS(staticFS)))
 
 	srv := &Server{
-		httpServer: &http.Server{Handler: mux},
+		httpServer: &http.Server{Handler: localhostOnly(mux)},
 		listener:   listener,
+		mux:        mux,
 	}
 	return srv, nil
 }
@@ -51,8 +53,10 @@ func (s *Server) URL() string {
 }
 
 // Mux returns the underlying ServeMux for registering additional routes.
+// The mux is wrapped by localhostOnly before it is served, so routes
+// registered here are guarded too.
 func (s *Server) Mux() *http.ServeMux {
-	return s.httpServer.Handler.(*http.ServeMux)
+	return s.mux
 }
 
 // Serve starts serving requests. Blocks until the server is shut down.
