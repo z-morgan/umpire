@@ -8,12 +8,6 @@ Umpire is a local code review UI that aggregates your feedback to give back to y
 brew install z-morgan/tap/umpire
 ```
 
-Or with Go:
-
-```
-go install github.com/zmorgan/umpire@latest
-```
-
 ## Usage
 
 Run from any git repository:
