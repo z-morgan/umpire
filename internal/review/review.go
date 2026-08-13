@@ -27,6 +27,16 @@ type CommitMessageEdit struct {
 }
 
 // Comment represents a single inline comment on a diff.
+//
+// The anchoring contract for an agent consuming a saved review:
+//   - CommitSHA empty  => LineStart is relative to the head revision, i.e.
+//     the comment was authored against the full base..head diff.
+//   - CommitSHA set     => LineStart is relative to that commit's diff, and
+//     DiffHunk is the authoritative locator, because a later commit may have
+//     shifted the same line in the head revision.
+//
+// Trust LineStart directly only in the empty-CommitSHA case; otherwise resolve
+// the line through DiffHunk.
 type Comment struct {
 	ID        string `json:"id"`
 	File      string `json:"file"`
@@ -35,7 +45,9 @@ type Comment struct {
 	LineEnd   int    `json:"line_end"`
 	Side      string `json:"side"`
 	Body      string `json:"body"`
-	DiffHunk  string `json:"diff_hunk"`
+	// DiffHunk is a few lines of surrounding context, each carrying its diff
+	// prefix (+/-/space). It is the authoritative locator when CommitSHA is set.
+	DiffHunk string `json:"diff_hunk"`
 }
 
 // SubmitRequest is the JSON body sent by the frontend to submit a review.

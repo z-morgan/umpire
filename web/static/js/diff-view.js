@@ -60,7 +60,9 @@ const DiffView = {
   },
 
   getDiffHunk(row) {
-    // Collect a few lines of context around the comment
+    // Collect a few lines of context around the comment. Each line keeps its
+    // diff prefix (+/-/space), which diff2html renders in a separate span, so
+    // the captured hunk is anchorable rather than just readable text.
     const lines = [];
     let current = row;
     for (let i = 0; i < 3 && current && current.previousElementSibling; i++) {
@@ -69,7 +71,9 @@ const DiffView = {
     for (let i = 0; i < 7 && current; i++) {
       const codeEl = current.querySelector('.d2h-code-line-ctn');
       if (codeEl) {
-        lines.push(codeEl.textContent);
+        const prefixEl = current.querySelector('.d2h-code-line-prefix');
+        const prefix = prefixEl ? prefixEl.textContent : '';
+        lines.push(prefix + codeEl.textContent);
       }
       current = current.nextElementSibling;
     }
