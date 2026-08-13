@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,7 +52,7 @@ func (rc *ReviewContext) handleInfo(w http.ResponseWriter, r *http.Request) {
 func (rc *ReviewContext) handleCommits(w http.ResponseWriter, r *http.Request) {
 	commits, err := rc.Repo.CommitsBetween(rc.MergeBase, rc.HeadSHA)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "listing commits", err)
 		return
 	}
 	writeJSON(w, commits)
@@ -68,7 +69,7 @@ func (rc *ReviewContext) handleDiff(w http.ResponseWriter, r *http.Request) {
 		diff, err = rc.Repo.DiffBetween(rc.MergeBase, rc.HeadSHA)
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "generating diff", err)
 		return
 	}
 
@@ -79,7 +80,7 @@ func (rc *ReviewContext) handleDiff(w http.ResponseWriter, r *http.Request) {
 func (rc *ReviewContext) handleFiles(w http.ResponseWriter, r *http.Request) {
 	files, err := rc.Repo.ChangedFiles(rc.MergeBase, rc.HeadSHA)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "listing changed files", err)
 		return
 	}
 	writeJSON(w, files)
@@ -104,7 +105,7 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 
 	path, err := rc.Store.Save(rev)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "saving review", err)
 		return
 	}
 
@@ -136,7 +137,7 @@ func (rc *ReviewContext) handleFileLines(w http.ResponseWriter, r *http.Request)
 
 	content, err := rc.Repo.ShowFile(ref, path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "reading file at ref", err)
 		return
 	}
 
@@ -175,13 +176,13 @@ func (rc *ReviewContext) handleRecordFeedback(w http.ResponseWriter, r *http.Req
 	}
 
 	if _, err := rc.FeedbackStore.Save(snap); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "saving feedback snapshot", err)
 		return
 	}
 
 	count, err := rc.FeedbackStore.Count()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "counting feedback snapshots", err)
 		return
 	}
 
@@ -194,7 +195,7 @@ func (rc *ReviewContext) handleRecordFeedback(w http.ResponseWriter, r *http.Req
 func (rc *ReviewContext) handleFeedbackPrompt(w http.ResponseWriter, r *http.Request) {
 	count, err := rc.FeedbackStore.Count()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, "counting feedback snapshots", err)
 		return
 	}
 
@@ -213,4 +214,14 @@ func (rc *ReviewContext) handleShutdown(w http.ResponseWriter, _ *http.Request) 
 func writeJSON(w http.ResponseWriter, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+}
+
+// serverError logs the underlying error to the terminal and returns a generic
+// message to the client. A git failure carries stderr that routinely includes
+// absolute local paths, and a failed write to .umpire/reviews/ leaks one too,
+// so the detail belongs in Umpire's output -- which is already being watched --
+// not in an HTTP response invisible unless devtools are open.
+func serverError(w http.ResponseWriter, context string, err error) {
+	log.Printf("umpire: %s: %v", context, err)
+	http.Error(w, "internal server error", http.StatusInternalServerError)
 }
