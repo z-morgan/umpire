@@ -28,6 +28,12 @@ homebrew_casks:
   - name: umpire
     binaries:
       - umpire
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/umpire"]
+          end
     homepage: https://github.com/z-morgan/umpire
     description: Local code review tool with a GitHub-like UI
     repository:
