@@ -278,6 +278,48 @@ func TestHandleReviewPersistsCommitMessageEdits(t *testing.T) {
 	if edit.OriginalSubject != "wip" {
 		t.Errorf("OriginalSubject = %q, want %q", edit.OriginalSubject, "wip")
 	}
+	if rev.CommitMessageEditInstructions != review.CommitMessageEditWrapInstruction {
+		t.Errorf("CommitMessageEditInstructions = %q, want %q", rev.CommitMessageEditInstructions, review.CommitMessageEditWrapInstruction)
+	}
+}
+
+func TestHandleReviewOmitsInstructionsWithoutEdits(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	body := review.SubmitRequest{Summary: "Looks good, no message changes."}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/api/review", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	matches, err := filepath.Glob(filepath.Join(rc.Store.Dir, "review-*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 review file, got %d", len(matches))
+	}
+
+	data, err := os.ReadFile(matches[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	// With no commit-message edits, the instruction key should be absent
+	// entirely (omitempty), not just empty.
+	if strings.Contains(string(data), "commit_message_edit_instructions") {
+		t.Errorf("review JSON should omit the instruction key when there are no edits:\n%s", data)
+	}
 }
 
 func TestHandleRecordFeedbackPersistsSnapshot(t *testing.T) {

@@ -102,6 +102,9 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 		Comments:           req.Comments,
 		CommitMessageEdits: req.CommitMessageEdits,
 	}
+	if len(req.CommitMessageEdits) > 0 {
+		rev.CommitMessageEditInstructions = review.CommitMessageEditWrapInstruction
+	}
 
 	path, err := rc.Store.Save(rev)
 	if err != nil {
