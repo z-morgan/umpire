@@ -23,6 +23,9 @@ checksum:
 
 changelog:
   sort: asc
+  filters:
+    exclude:
+      - '^chore\(beads\):'
 
 homebrew_casks:
   - name: umpire
