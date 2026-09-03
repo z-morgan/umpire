@@ -4,6 +4,13 @@ const App = {
   diffContainer: null,
   commitMessageEdits: {},
 
+  // A commit body is hard-wrapped at 72 columns, but real bodies rarely fill
+  // the full width, so a pane sized to an exact 72-column line reads wider than
+  // it needs to. sizeCommitHeader measures the 72-column reference, then pulls
+  // the pane in to this fraction of it; the occasional long line wraps.
+  COMMIT_BODY_COLUMNS: 72,
+  COMMIT_HEADER_WIDTH_SCALE: 0.89,
+
   async init() {
     this.diffContainer = document.getElementById('diff-container');
 
@@ -186,12 +193,64 @@ const App = {
 
     header.append(nav, message);
     this.diffContainer.parentNode.insertBefore(header, this.diffContainer);
+    this.sizeCommitHeader(header);
 
     const handle = document.createElement('div');
     handle.id = 'commit-resize-handle';
     handle.className = 'resize-handle';
     this.diffContainer.parentNode.insertBefore(handle, this.diffContainer);
     Resize.attachCommitHeaderDrag(handle, header);
+  },
+
+  // Size the pane from a 72-column reference line rather than the actual text,
+  // so every commit's pane lands at the same width, then scale it in (see
+  // COMMIT_HEADER_WIDTH_SCALE) so it hugs typical bodies. The body uses a
+  // proportional font, so the reference is measured in that font. It keeps
+  // white-space: pre-wrap, so a too-long line -- or dragging narrower -- wraps.
+  sizeCommitHeader(header) {
+    const message = header.querySelector('.commit-message');
+    if (!message) return;
+
+    const referenceWidth = this.measureBodyReference(message);
+    const chrome = this.horizontalChrome(header) + this.horizontalChrome(message);
+    const scrollbarAllowance = 12;
+    const fit = referenceWidth + chrome + scrollbarAllowance;
+    const desired = fit * this.COMMIT_HEADER_WIDTH_SCALE;
+
+    const capped = Math.min(desired, window.innerWidth * 0.5, Resize.MAX_COMMIT_HEADER_WIDTH);
+    header.style.width = Math.max(Resize.MIN_COMMIT_HEADER_WIDTH, capped) + 'px';
+  },
+
+  // Rendered width of a 72-character line in the body's own font. A hidden probe
+  // nested where the real body sits inherits the exact font, so this holds even
+  // for a commit that has no body of its own to measure.
+  measureBodyReference(message) {
+    const probe = document.createElement('pre');
+    probe.className = 'commit-message-body';
+    probe.style.position = 'absolute';
+    probe.style.visibility = 'hidden';
+    message.append(probe);
+
+    const style = getComputedStyle(probe);
+    const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const reference = 'n'.repeat(this.COMMIT_BODY_COLUMNS);
+    const width = this.measureTextWidth(reference, font);
+
+    message.removeChild(probe);
+    return width;
+  },
+
+  measureTextWidth(text, font) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = font;
+    return context.measureText(text).width;
+  },
+
+  horizontalChrome(element) {
+    const style = getComputedStyle(element);
+    return parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+      + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
   },
 
   buildCommitMessageView(commit) {
