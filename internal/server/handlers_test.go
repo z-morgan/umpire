@@ -322,6 +322,35 @@ func TestHandleReviewOmitsInstructionsWithoutEdits(t *testing.T) {
 	}
 }
 
+func TestHandleReviewPrintsSavedPath(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	var out bytes.Buffer
+	rc.Out = &out
+
+	payload, err := json.Marshal(review.SubmitRequest{Summary: "Ship it."})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/api/review", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var body map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+
+	want := "umpire: review saved to " + body["path"] + "\n"
+	if out.String() != want {
+		t.Errorf("stdout = %q, want %q", out.String(), want)
+	}
+}
+
 func TestHandleRecordFeedbackPersistsSnapshot(t *testing.T) {
 	ts, rc := setupTestServerWithContext(t)
 	defer ts.Close()

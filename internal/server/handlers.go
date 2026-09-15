@@ -2,8 +2,11 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -23,6 +26,16 @@ type ReviewContext struct {
 	Store         *review.Store
 	FeedbackStore *feedback.Store
 	ShutdownFn    func() // called by /api/shutdown to trigger server shutdown
+	// Out carries machine-readable output -- currently the saved review path.
+	// Human narration goes to stderr. Defaults to os.Stdout when nil.
+	Out io.Writer
+}
+
+func (rc *ReviewContext) out() io.Writer {
+	if rc.Out == nil {
+		return os.Stdout
+	}
+	return rc.Out
 }
 
 // RegisterAPI registers the API routes on the server's mux.
@@ -111,6 +124,8 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "saving review", err)
 		return
 	}
+
+	fmt.Fprintf(rc.out(), "umpire: review saved to %s\n", path)
 
 	writeJSON(w, map[string]string{"path": path})
 }
