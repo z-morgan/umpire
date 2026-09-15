@@ -131,6 +131,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(os.Stderr, "")
 
 	suggestGitignore(cwd)
+	suggestInstallSkill()
 
 	browser.Open(url)
 
@@ -155,6 +156,29 @@ func runReview(cmd *cobra.Command, args []string) error {
 	case err := <-errCh:
 		return err
 	}
+}
+
+// suggestInstallSkill points at install-skill, but only for someone who hasn't
+// run it. Like the .gitignore hint, a line that keeps printing after you've
+// acted on it is just noise.
+func suggestInstallSkill() {
+	if skillInstalled() {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "  hint: run `umpire install-skill` to review from a Claude Code session\n\n")
+}
+
+func skillInstalled() bool {
+	for _, project := range []bool{false, true} {
+		path, err := skillPath(project)
+		if err != nil {
+			continue
+		}
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 func suggestGitignore(repoDir string) {
