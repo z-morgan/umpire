@@ -70,8 +70,14 @@ works. Specifically, do not:
 You will be re-invoked automatically when umpire exits. Waiting costs a turn and
 buys nothing.
 
-Keep the message short: the review is open, you'll pick it up when they submit.
-Include the URL if the launch result already has it.
+Keep the message short: the review is open, and you'll pick it up when they're
+done. Include the URL if the launch result already has it.
+
+Say that submitting isn't the last step. After they submit, umpire asks whether
+to record the feedback, and it keeps running until they answer — that answer is
+what closes the server and hands the session back to you. A user who submits and
+walks away has done the obvious thing and will be left waiting on a pickup that
+can't happen, so it's worth the one sentence up front.
 
 Umpire prints a line when it couldn't open the browser. If you see that line,
 say so and hand over the URL — a failed auto-open can leave the browser focused
@@ -90,8 +96,9 @@ back to it.
 
 ## Finding the review
 
-The harness wakes you with the process's output when umpire exits. Umpire prints
-the path it saved the review to:
+The harness wakes you with the process's output when umpire exits, which happens
+once the user answers the feedback question that follows their submission — not
+at submission itself. Umpire prints the path it saved the review to:
 
 ```
 umpire: review saved to .umpire/reviews/review-20260915-142233.json
