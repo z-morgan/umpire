@@ -217,17 +217,14 @@ Without it the rebase hangs waiting for input that will never come.
 
 ### Applying commit message edits
 
-Message edits ride along in the same rebase. `git commit --fixup=reword:<sha>`
-makes the empty `amend!` commit that autosquash turns into a new message, but it
-wants an editor, so feed it one from a file:
+Message edits ride along in the same rebase. Write the new message to a file and
+commit it empty:
 
 ```
-git commit --fixup=reword:<sha>     # with GIT_EDITOR set to copy your file in
+git commit --allow-empty -F <message-file>
 ```
 
-The file has to keep git's `amend!` header line, because that header is what
-autosquash matches against — overwrite it and the reword lands as a stray commit
-of its own instead:
+The file looks like this:
 
 ```
 amend! <original_subject>
@@ -237,9 +234,17 @@ amend! <original_subject>
 <edited_body, hard-wrapped at 72 columns>
 ```
 
-`original_subject` is in the review JSON alongside the edit, which is what it's
-there for. Make these commits before the rebase, next to the fixups, and the one
-autosquash pass applies both.
+That first line is what autosquash matches on, and `original_subject` is in the
+review JSON alongside the edit for exactly this purpose. Everything after the
+blank line becomes the commit's new message. Make these alongside the fixups,
+before the rebase, and one autosquash pass applies both.
+
+Don't use `git commit --fixup=reword:<sha>` for this. It insists on an editor,
+`-m` is rejected outright, and driving the editor from a file is a trap: git
+pre-fills the `amend!` header, so a file that replaces the whole buffer drops it
+silently, and autosquash then leaves your reword at the tip as a stray commit
+while the original message stays exactly as it was. `--allow-empty -F` builds
+the same commit with nothing to get wrong.
 
 ### Comments with no commit_sha
 
