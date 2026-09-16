@@ -77,9 +77,16 @@ CLI flag does.
 
 ### Under a Bash sandbox
 
-A sandboxed Bash tool blocks umpire from binding its listener and from writing
-feedback to `~/.umpire/`. Two settings keys fix it, in `.claude/settings.json`
-or `.claude/settings.local.json`:
+Umpire binds a localhost port and opens a browser window, and a sandboxed Bash
+tool blocks both. **Run umpire outside the sandbox.** That's the short version,
+and it's the only thing that gets you the browser: auto-open is refused at the
+Mach layer, so your browser is activated without receiving the URL and comes to
+the front with no new tab. Launching the browser binary directly fails the same
+way, and there's no allowlist entry for it.
+
+If you'd rather keep umpire sandboxed and open the URL yourself, these two keys
+get it far enough to serve the review, in `.claude/settings.json` or
+`.claude/settings.local.json`:
 
 ```json
 {
@@ -90,9 +97,8 @@ or `.claude/settings.local.json`:
 }
 ```
 
-Browser auto-open doesn't survive a sandbox even with those keys — LaunchServices
-activates your browser but won't deliver the URL to it, so the browser comes to
-the front with no new tab. Umpire says so and prints the URL to open yourself.
+Settings changes take effect at session start, so a session that's already
+running won't pick them up.
 
 ## Features
 

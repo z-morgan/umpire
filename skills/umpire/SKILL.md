@@ -15,22 +15,9 @@ the harness will re-invoke you when the process exits.
 
 ## Launching a review
 
-### First, check there's something to review
+**This is the first thing you do. Not the second.**
 
-If the head ref has no commits ahead of the base, umpire opens a UI with an
-empty diff in it, which wastes the user's trip to the browser:
-
-```
-git rev-list --count <base>..<head>
-```
-
-A count of zero means say so and stop. Don't launch. Usually it means the base
-is wrong — the branch was cut from `develop` and the default base is `main`, or
-the work is still uncommitted in the working tree.
-
-### Then launch it
-
-Run the binary with the Bash tool and `run_in_background: true`:
+One Bash call, `run_in_background: true`, sandbox off:
 
 ```
 umpire
@@ -40,10 +27,31 @@ Pass any arguments given to `/umpire` straight through. `umpire --base develop`
 and `umpire --head feature/auth` are the common ones; `umpire --help` lists the
 rest.
 
-Umpire tries to open the browser itself. It doesn't always succeed — under a
-sandbox the desktop refuses the handoff, and the browser comes to the front
-without opening a tab. Umpire prints the URL either way, and prints a line
-saying so when the auto-open failed.
+Run nothing before it. Not `git status`, not `git log`, not a check for whether
+the branch has commits worth reviewing, not a look at what the base ought to be.
+Umpire resolves the refs itself and prints what it found. The user typed
+`/umpire` expecting a browser window, and every command you run first is a
+second they spend watching a spinner instead. Getting the review open is the
+whole job.
+
+If something turns out to be off — no commits between base and head, a base that
+isn't what they meant — umpire's banner says so, and you can raise it *after*
+it's running. Don't front-load it.
+
+### The sandbox has to be off for this one call
+
+Umpire binds a port on 127.0.0.1 and opens a browser window. A Bash sandbox
+blocks both, and the second one can't be allowlisted around: the browser handoff
+is refused at the Mach layer, so `open` activates the browser without delivering
+the URL and the user gets a focused window with no new tab. Launching the
+browser binary directly fails the same way.
+
+So if your Bash tool sandboxes commands, run umpire outside the sandbox. This is
+a local review UI on the loopback interface that the user asked for by name.
+
+If you can't disable it, umpire still starts as long as port binding is
+permitted, and still prints its URL — say the auto-open didn't work and hand
+them the URL to open.
 
 ## Then stop
 
@@ -62,16 +70,16 @@ works. Specifically, do not:
 You will be re-invoked automatically when umpire exits. Waiting costs a turn and
 buys nothing.
 
-**Don't tell the user their browser is open.** You can't see whether it is, and
-when the auto-open fails it fails quietly from their side: the browser jumps to
-the front with no new tab, which looks enough like success that they'll sit
-waiting on a review that never loaded. Say umpire is running and waiting for
-their review, and give them the URL so they can open it themselves if nothing
-appeared.
+Keep the message short: the review is open, you'll pick it up when they submit.
+Include the URL if the launch result already has it.
 
-Use the URL from the launch result if it's there. If it isn't, tell them it's in
-umpire's output rather than going back for it — that second look is the wait
-loop above, wearing a different hat.
+Umpire prints a line when it couldn't open the browser. If you see that line,
+say so and hand over the URL — a failed auto-open can leave the browser focused
+with no new tab, which looks enough like success that the user will sit waiting
+on a review that never loaded. If you don't see it, the browser opened.
+
+Either way, don't go back to the output for the URL a second time. That's the
+wait loop above, wearing a different hat.
 
 ### If the user changes their mind
 
@@ -251,8 +259,10 @@ Error: starting server: listen on 127.0.0.1:0: listen tcp 127.0.0.1:0: bind: ope
 And the optional feedback capture after submitting fails because it writes to
 `~/.umpire/feedback/`.
 
-Both are fixable with settings, so don't reach for disabling the sandbox. In
-`.claude/settings.json` or `.claude/settings.local.json`:
+Running umpire outside the sandbox fixes both, and is the recommended answer
+because it's also the only thing that fixes the browser. If you'd rather keep
+umpire sandboxed and open the URL by hand, these two keys get it far enough to
+serve the review, in `.claude/settings.json` or `.claude/settings.local.json`:
 
 ```json
 {
@@ -262,6 +272,9 @@ Both are fixable with settings, so don't reach for disabling the sandbox. In
   }
 }
 ```
+
+Settings changes land at session start, so a session already running won't see
+them.
 
 ### The browser focuses but no tab opens
 
@@ -274,9 +287,10 @@ couldn't open a browser automatically, so open the URL above yourself
 ```
 
 The browser coming to the front is the app being activated. The missing tab is
-the refused event. Umpire still serves the review at the printed URL, so the fix
-is for the user to open that URL themselves — everything after that works
-normally.
+the refused event.
 
-This is why you shouldn't claim the browser opened. From the user's side a
-failed auto-open looks a lot like a successful one.
+There's no allowlist entry for this. Launching the browser binary directly
+instead of going through `open` fails too, on the same Mach restriction. The
+only fix is running umpire outside the sandbox. Short of that, umpire still
+serves the review at the printed URL and everything after that works normally,
+so the user opening that URL by hand costs them one click.
