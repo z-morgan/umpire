@@ -90,6 +90,10 @@ or `.claude/settings.local.json`:
 }
 ```
 
+Browser auto-open doesn't survive a sandbox even with those keys — LaunchServices
+activates your browser but won't deliver the URL to it, so the browser comes to
+the front with no new tab. Umpire says so and prints the URL to open yourself.
+
 ## Features
 
 - Commit-by-commit or full-diff view with syntax-highlighted diffs

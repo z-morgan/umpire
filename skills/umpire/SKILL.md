@@ -40,8 +40,10 @@ Pass any arguments given to `/umpire` straight through. `umpire --base develop`
 and `umpire --head feature/auth` are the common ones; `umpire --help` lists the
 rest.
 
-Umpire opens the browser itself, so there is nothing to click through on your
-side.
+Umpire tries to open the browser itself. It doesn't always succeed — under a
+sandbox the desktop refuses the handoff, and the browser comes to the front
+without opening a tab. Umpire prints the URL either way, and prints a line
+saying so when the auto-open failed.
 
 ## Then stop
 
@@ -60,10 +62,16 @@ works. Specifically, do not:
 You will be re-invoked automatically when umpire exits. Waiting costs a turn and
 buys nothing.
 
-Reporting the URL is optional. If it's already in the launch result, pass it
-along. If it isn't, say nothing about it and end your turn — umpire has already
-opened the browser, so the URL is a convenience and nothing is waiting on it.
-Checking a second time for it is the wait loop above, wearing a different hat.
+**Don't tell the user their browser is open.** You can't see whether it is, and
+when the auto-open fails it fails quietly from their side: the browser jumps to
+the front with no new tab, which looks enough like success that they'll sit
+waiting on a review that never loaded. Say umpire is running and waiting for
+their review, and give them the URL so they can open it themselves if nothing
+appeared.
+
+Use the URL from the launch result if it's there. If it isn't, tell them it's in
+umpire's output rather than going back for it — that second look is the wait
+loop above, wearing a different hat.
 
 ### If the user changes their mind
 
@@ -255,6 +263,20 @@ Both are fixable with settings, so don't reach for disabling the sandbox. In
 }
 ```
 
-Browser auto-open may need more, since `open` goes through LaunchServices and
-that wants a Mach lookup the sandbox may not grant. That one only degrades
-though: the URL is printed either way, and the user can click it.
+### The browser focuses but no tab opens
+
+Auto-open fails under a sandbox and those two keys don't fix it. LaunchServices
+activates the browser but refuses to deliver the Apple Event carrying the URL:
+
+```
+couldn't open a browser automatically, so open the URL above yourself
+(exit status 1: ... Code=-600 "procNotFound" ... _LSFunction=_LSAnnotateAndSendAppleEventWithOptions)
+```
+
+The browser coming to the front is the app being activated. The missing tab is
+the refused event. Umpire still serves the review at the printed URL, so the fix
+is for the user to open that URL themselves — everything after that works
+normally.
+
+This is why you shouldn't claim the browser opened. From the user's side a
+failed auto-open looks a lot like a successful one.

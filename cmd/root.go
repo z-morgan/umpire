@@ -133,7 +133,10 @@ func runReview(cmd *cobra.Command, args []string) error {
 	suggestGitignore(cwd)
 	suggestInstallSkill()
 
-	browser.Open(url)
+	if err := browser.Open(url); err != nil {
+		fmt.Fprintf(os.Stderr, "  couldn't open a browser automatically, so open the URL above yourself\n")
+		fmt.Fprintf(os.Stderr, "  (%v)\n\n", err)
+	}
 
 	// Graceful shutdown on interrupt or review submission
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
