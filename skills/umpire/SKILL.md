@@ -28,6 +28,19 @@ rest.
 Umpire opens the browser itself, so there is nothing to click through on your
 side.
 
+### Check there's something to review first
+
+If the head ref has no commits ahead of the base, umpire opens a UI with an
+empty diff in it, which wastes the user's trip to the browser:
+
+```
+git rev-list --count <base>..<head>
+```
+
+A count of zero means say so and stop. Don't launch. Usually it means the base
+is wrong — the branch was cut from `develop` and the default base is `main`, or
+the work is still uncommitted in the working tree.
+
 ## Then stop
 
 **End your turn immediately after launching.** Tell the user their review is
@@ -48,6 +61,13 @@ buys nothing.
 You may read the background task output **once**, right after launching, to
 report the URL umpire printed. If the banner hasn't appeared yet, leave it out
 and end your turn anyway. Do not read a second time.
+
+### If the user changes their mind
+
+A review that is never submitted never exits, so the background task would sit
+there indefinitely. If the user says to cancel, forget it, or moves on to
+something else, kill the task. Don't leave it running on the chance they come
+back to it.
 
 ## Finding the review
 
@@ -137,6 +157,18 @@ Appending fixups to the tip leaves the branch reading as a sequence of mistakes
 and corrections, when it could read as though the feedback had been incorporated
 the first time. Every comment already knows its commit.
 
+**First check whether the branch has been pushed:**
+
+```
+git rev-parse --abbrev-ref @{upstream}
+```
+
+If that succeeds, the branch has an upstream and rebasing rewrites history other
+people may already have. **Stop and ask** before going any further. Force-pushing
+a shared branch is the user's call, and they may prefer fixups at the tip, or a
+new branch, or to push nothing at all. If the command fails, there's no upstream
+and the history is yours to rewrite.
+
 Group the comments by `commit_sha` and work one target commit at a time, so each
 fixup holds only the changes belonging to it:
 
@@ -193,3 +225,33 @@ to amend. Make those changes as a new commit at the tip.
 Report what you changed, grouped by comment, and note anything you chose not to
 do and why. Say explicitly if the branch was rebased, since the user's local
 checkout of it is now a different set of SHAs.
+
+## Troubleshooting
+
+### Umpire fails to start under a Bash sandbox
+
+A sandboxed Bash tool blocks both things umpire needs. Starting the server fails
+because it can't bind a listener:
+
+```
+Error: starting server: listen on 127.0.0.1:0: listen tcp 127.0.0.1:0: bind: operation not permitted
+```
+
+And the optional feedback capture after submitting fails because it writes to
+`~/.umpire/feedback/`.
+
+Both are fixable with settings, so don't reach for disabling the sandbox. In
+`.claude/settings.json` or `.claude/settings.local.json`:
+
+```json
+{
+  "sandbox": {
+    "network": { "allowLocalBinding": true },
+    "filesystem": { "write": { "allow": ["~/.umpire"] } }
+  }
+}
+```
+
+Browser auto-open may need more, since `open` goes through LaunchServices and
+that wants a Mach lookup the sandbox may not grant. That one only degrades
+though: the URL is printed either way, and the user can click it.
