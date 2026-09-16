@@ -15,6 +15,21 @@ the harness will re-invoke you when the process exits.
 
 ## Launching a review
 
+### First, check there's something to review
+
+If the head ref has no commits ahead of the base, umpire opens a UI with an
+empty diff in it, which wastes the user's trip to the browser:
+
+```
+git rev-list --count <base>..<head>
+```
+
+A count of zero means say so and stop. Don't launch. Usually it means the base
+is wrong — the branch was cut from `develop` and the default base is `main`, or
+the work is still uncommitted in the working tree.
+
+### Then launch it
+
 Run the binary with the Bash tool and `run_in_background: true`:
 
 ```
@@ -27,19 +42,6 @@ rest.
 
 Umpire opens the browser itself, so there is nothing to click through on your
 side.
-
-### Check there's something to review first
-
-If the head ref has no commits ahead of the base, umpire opens a UI with an
-empty diff in it, which wastes the user's trip to the browser:
-
-```
-git rev-list --count <base>..<head>
-```
-
-A count of zero means say so and stop. Don't launch. Usually it means the base
-is wrong — the branch was cut from `develop` and the default base is `main`, or
-the work is still uncommitted in the working tree.
 
 ## Then stop
 
@@ -58,9 +60,10 @@ works. Specifically, do not:
 You will be re-invoked automatically when umpire exits. Waiting costs a turn and
 buys nothing.
 
-You may read the background task output **once**, right after launching, to
-report the URL umpire printed. If the banner hasn't appeared yet, leave it out
-and end your turn anyway. Do not read a second time.
+Reporting the URL is optional. If it's already in the launch result, pass it
+along. If it isn't, say nothing about it and end your turn — umpire has already
+opened the browser, so the URL is a convenience and nothing is waiting on it.
+Checking a second time for it is the wait loop above, wearing a different hat.
 
 ### If the user changes their mind
 
