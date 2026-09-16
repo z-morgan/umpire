@@ -46,6 +46,50 @@ Review a specific branch:
 umpire --base main --head feature/auth
 ```
 
+## Reviewing from a Claude Code session
+
+Umpire ships a Claude Code skill that closes the loop, so you don't have to
+leave your session to run a review and then come back and explain the result.
+Install it once:
+
+```
+umpire install-skill
+```
+
+That writes `~/.claude/skills/umpire/SKILL.md`, which covers every repository on
+the machine. Use `--project` to scope it to the current repo instead, and
+`--force` to overwrite an existing file. The skill is embedded in the binary, so
+`brew upgrade umpire` plus a re-run picks up any changes to it.
+
+Then, in a session:
+
+```
+/umpire
+```
+
+Claude starts umpire in the background and ends its turn while you review. When
+you submit and dismiss the UI, the process exits, and Claude picks the review up
+and works it: answering any questions you asked first, and otherwise amending
+the commits your comments landed on rather than piling fixups at the tip.
+
+Arguments pass straight through, so `/umpire --base develop` works the way the
+CLI flag does.
+
+### Under a Bash sandbox
+
+A sandboxed Bash tool blocks umpire from binding its listener and from writing
+feedback to `~/.umpire/`. Two settings keys fix it, in `.claude/settings.json`
+or `.claude/settings.local.json`:
+
+```json
+{
+  "sandbox": {
+    "network": { "allowLocalBinding": true },
+    "filesystem": { "write": { "allow": ["~/.umpire"] } }
+  }
+}
+```
+
 ## Features
 
 - Commit-by-commit or full-diff view with syntax-highlighted diffs
@@ -56,3 +100,4 @@ umpire --base main --head feature/auth
 - Review summary with submit, saved as JSON for scripting and CI integration
 - Optional feedback capture after submitting: record your reviews and generate a prompt for Claude to propose config improvements
 - Keyboard shortcuts: `j`/`k` to navigate files, `←`/`→` to move between commits
+- A `/umpire` skill for Claude Code, so a review round-trips without leaving the session
