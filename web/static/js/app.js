@@ -446,6 +446,20 @@ const App = {
     return box;
   },
 
+  collectCommitComments() {
+    const comments = [];
+    for (const [sha, body] of Object.entries(this.commitComments)) {
+      if (!body) continue;
+      const commit = Sidebar.commits.find(c => c.sha === sha);
+      comments.push({
+        sha,
+        subject: commit ? commit.subject : '',
+        body,
+      });
+    }
+    return comments;
+  },
+
   removeCommitHeader() {
     const existing = document.getElementById('commit-header');
     if (existing) existing.remove();
@@ -482,9 +496,11 @@ const App = {
     const summary = document.getElementById('review-summary').value.trim();
     const comments = ReviewState.getAllComments();
     const commitMessageEdits = this.collectCommitMessageEdits();
+    const commitComments = this.collectCommitComments();
 
-    if (!summary && comments.length === 0 && commitMessageEdits.length === 0) {
-      alert('Add a summary, comments, or a commit message edit before submitting.');
+    if (!summary && comments.length === 0 && commitMessageEdits.length === 0
+        && commitComments.length === 0) {
+      alert('Add a summary, a comment, or a commit message edit before submitting.');
       return;
     }
 
@@ -497,6 +513,7 @@ const App = {
       summary,
       comments,
       commit_message_edits: commitMessageEdits,
+      commit_comments: commitComments,
     });
     this.savedReviewPath = result.path;
 
