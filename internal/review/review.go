@@ -19,6 +19,17 @@ type Review struct {
 	Comments                      []Comment           `json:"comments"`
 	CommitMessageEdits            []CommitMessageEdit `json:"commit_message_edits,omitempty"`
 	CommitMessageEditInstructions string              `json:"commit_message_edit_instructions,omitempty"`
+	CommitComments                []CommitComment     `json:"commit_comments,omitempty"`
+}
+
+// CommitComment is a reviewer's note about a commit as a whole, as opposed to
+// a Comment, which is anchored to a line of a diff. The subject is kept for
+// context, so an agent reading a saved review knows which commit is meant
+// without resolving the SHA.
+type CommitComment struct {
+	SHA     string `json:"sha"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
 }
 
 // CommitMessageEdit captures a user's rewrite of a commit message during review.
@@ -62,4 +73,5 @@ type SubmitRequest struct {
 	Summary            string              `json:"summary"`
 	Comments           []Comment           `json:"comments"`
 	CommitMessageEdits []CommitMessageEdit `json:"commit_message_edits,omitempty"`
+	CommitComments     []CommitComment     `json:"commit_comments,omitempty"`
 }

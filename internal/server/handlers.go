@@ -114,6 +114,7 @@ func (rc *ReviewContext) handleReview(w http.ResponseWriter, r *http.Request) {
 		Summary:            req.Summary,
 		Comments:           req.Comments,
 		CommitMessageEdits: req.CommitMessageEdits,
+		CommitComments:     req.CommitComments,
 	}
 	if len(req.CommitMessageEdits) > 0 {
 		rev.CommitMessageEditInstructions = review.CommitMessageEditWrapInstruction

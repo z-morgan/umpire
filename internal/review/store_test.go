@@ -123,6 +123,53 @@ func TestStoreSaveRoundTripsCommitMessageEdits(t *testing.T) {
 	}
 }
 
+func TestStoreSaveRoundTripsCommitComments(t *testing.T) {
+	dir := t.TempDir()
+	store := &Store{Dir: filepath.Join(dir, ".umpire", "reviews")}
+
+	r := &Review{
+		BaseRef: "main",
+		HeadRef: "feature",
+		Summary: "One note per commit",
+		CommitComments: []CommitComment{
+			{
+				SHA:     "def456",
+				Subject: "Add hello function",
+				Body:    "This belongs in the greeting package.",
+			},
+		},
+	}
+
+	path, err := store.Save(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var loaded Review
+	if err := json.Unmarshal(data, &loaded); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(loaded.CommitComments) != 1 {
+		t.Fatalf("len(CommitComments) = %d, want 1", len(loaded.CommitComments))
+	}
+	comment := loaded.CommitComments[0]
+	if comment.SHA != "def456" {
+		t.Errorf("comment.SHA = %q, want def456", comment.SHA)
+	}
+	if comment.Subject != "Add hello function" {
+		t.Errorf("comment.Subject = %q, want %q", comment.Subject, "Add hello function")
+	}
+	if comment.Body != "This belongs in the greeting package." {
+		t.Errorf("comment.Body = %q, want %q", comment.Body, "This belongs in the greeting package.")
+	}
+}
+
 func TestStoreSaveCreatesDirectory(t *testing.T) {
 	dir := t.TempDir()
 	nested := filepath.Join(dir, "deep", "nested", "reviews")
