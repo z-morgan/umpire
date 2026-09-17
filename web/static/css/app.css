@@ -348,6 +348,32 @@ body {
   word-wrap: break-word;
 }
 
+.commit-comment {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.commit-comment-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.commit-comment-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.4rem 0.5rem;
+  resize: vertical;
+}
+
 /* === Resize handle === */
 .resize-handle {
   width: 4px;

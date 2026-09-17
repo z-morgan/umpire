@@ -3,6 +3,7 @@
 const App = {
   diffContainer: null,
   commitMessageEdits: {},
+  commitComments: {},
 
   // A commit body is hard-wrapped at 72 columns, but real bodies rarely fill
   // the full width, so a pane sized to an exact 72-column line reads wider than
@@ -191,7 +192,7 @@ const App = {
 
     const message = this.buildCommitMessageView(commit);
 
-    header.append(nav, message);
+    header.append(nav, message, this.buildCommitCommentBox(commit));
     this.diffContainer.parentNode.insertBefore(header, this.diffContainer);
     this.sizeCommitHeader(header);
 
@@ -412,6 +413,37 @@ const App = {
       });
     }
     return edits;
+  },
+
+  // A note about the commit as a whole, as opposed to a line in its diff. It
+  // sits beside .commit-message rather than inside it, because editing the
+  // commit message replaces that whole node and would take the note with it.
+  // The text is captured on every keystroke, so there is nothing to flush
+  // before navigating away.
+  buildCommitCommentBox(commit) {
+    const box = document.createElement('label');
+    box.className = 'commit-comment';
+
+    const label = document.createElement('span');
+    label.className = 'commit-comment-label';
+    label.textContent = 'Commit comment';
+
+    const input = document.createElement('textarea');
+    input.className = 'commit-comment-input';
+    input.rows = 4;
+    input.placeholder = 'Comment on this commit...';
+    input.value = this.commitComments[commit.sha] || '';
+    input.addEventListener('input', () => {
+      const body = input.value.trim();
+      if (body) {
+        this.commitComments[commit.sha] = body;
+      } else {
+        delete this.commitComments[commit.sha];
+      }
+    });
+
+    box.append(label, input);
+    return box;
   },
 
   removeCommitHeader() {
