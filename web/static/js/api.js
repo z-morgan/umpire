@@ -28,11 +28,11 @@ const API = {
     return resp.json();
   },
 
-  async submitReview({ summary, comments, commit_message_edits }) {
+  async submitReview({ summary, comments, commit_message_edits, commit_comments }) {
     const resp = await fetch('/api/review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ summary, comments, commit_message_edits }),
+      body: JSON.stringify({ summary, comments, commit_message_edits, commit_comments }),
     });
     return resp.json();
   },
