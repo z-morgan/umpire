@@ -137,8 +137,11 @@ const App = {
     document.querySelectorAll('.comment-form .btn-save').forEach(btn => btn.click());
   },
 
+  // A reviewer counts both kinds of note as a comment, so the footer total
+  // sums them here. ReviewState stays the owner of line-anchored comments
+  // alone, since a commit comment has no line to anchor to.
   updateCommentCount() {
-    const count = ReviewState.getCommentCount();
+    const count = ReviewState.getCommentCount() + Object.keys(this.commitComments).length;
     const label = count === 1 ? '1 comment' : `${count} comments`;
     document.getElementById('comment-count').textContent = label;
   },
@@ -440,6 +443,7 @@ const App = {
       } else {
         delete this.commitComments[commit.sha];
       }
+      this.updateCommentCount();
     });
 
     box.append(label, input);
