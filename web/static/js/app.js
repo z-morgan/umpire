@@ -427,14 +427,10 @@ const App = {
     const box = document.createElement('label');
     box.className = 'commit-comment';
 
-    const label = document.createElement('span');
-    label.className = 'commit-comment-label';
-    label.textContent = 'Commit comment';
-
     const input = document.createElement('textarea');
     input.className = 'commit-comment-input';
     input.rows = 4;
-    input.placeholder = 'Comment on this commit...';
+    input.placeholder = 'Leave a general comment about this commit...';
     input.value = this.commitComments[commit.sha] || '';
     input.addEventListener('input', () => {
       const body = input.value.trim();
@@ -446,7 +442,7 @@ const App = {
       this.updateCommentCount();
     });
 
-    box.append(label, input);
+    box.append(input);
     return box;
   },
 

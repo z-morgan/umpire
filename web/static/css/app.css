@@ -348,16 +348,12 @@ body {
   word-wrap: break-word;
 }
 
+/* The box used to carry a "Commit comment" label, which the placeholder says
+   well enough on its own. This margin holds the gap the label left behind, so
+   the textarea sits where it always has. */
 .commit-comment {
   display: block;
-  margin-top: 0.75rem;
-}
-
-.commit-comment-label {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.35rem;
+  margin-top: 2.3rem;
 }
 
 .commit-comment-input {
