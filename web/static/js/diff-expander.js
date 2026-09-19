@@ -3,6 +3,28 @@
 const DiffExpander = {
   BATCH_SIZE: 20,
 
+  // A bar eats its gap from one end, a batch at a time. Both directions insert
+  // the fetched lines before the bar, so they differ only in which slice of the
+  // gap they take and which end of the gap is left over.
+  DIRECTIONS: {
+    up: {
+      fetchWindow(gapStart, gapEnd, batchSize) {
+        return { start: Math.max(gapStart, gapEnd - batchSize + 1), end: gapEnd };
+      },
+      remainingGap(gapStart, gapEnd, fetched) {
+        return { start: gapStart, end: fetched.start - 1 };
+      },
+    },
+    down: {
+      fetchWindow(gapStart, gapEnd, batchSize) {
+        return { start: gapStart, end: Math.min(gapEnd, gapStart + batchSize - 1) };
+      },
+      remainingGap(gapStart, gapEnd, fetched) {
+        return { start: fetched.end + 1, end: gapEnd };
+      },
+    },
+  },
+
   attach() {
     document.querySelectorAll('.d2h-diff-tbody').forEach(tbody => {
       tbody.querySelectorAll('tr').forEach(row => {
@@ -15,12 +37,12 @@ const DiffExpander = {
         row.dataset.gapStart = gap.start;
         row.dataset.gapEnd = gap.end;
         row.classList.add('d2h-expandable');
-        row.addEventListener('click', () => this.handleExpand(row));
+        row.addEventListener('click', () => this.handleExpand(row, this.DIRECTIONS.up));
       });
     });
   },
 
-  async handleExpand(infoRow) {
+  async handleExpand(infoRow, direction) {
     const fileWrapper = infoRow.closest('.d2h-file-wrapper');
     if (!fileWrapper) return;
 
@@ -36,10 +58,9 @@ const DiffExpander = {
     }
 
     const ref = Sidebar.activeCommitSHA || App.info.head_sha;
-    const fetchStart = Math.max(gapStart, gapEnd - this.BATCH_SIZE + 1);
-    const fetchEnd = gapEnd;
+    const fetched = direction.fetchWindow(gapStart, gapEnd, this.BATCH_SIZE);
 
-    const data = await API.getFileLines(ref, filePath, fetchStart, fetchEnd);
+    const data = await API.getFileLines(ref, filePath, fetched.start, fetched.end);
 
     const language = this.resolveLanguage(fileWrapper);
     const tbody = infoRow.closest('tbody');
@@ -49,10 +70,12 @@ const DiffExpander = {
       tbody.insertBefore(contextRow, infoRow);
     }
 
-    if (fetchStart <= gapStart) {
+    const remaining = direction.remainingGap(gapStart, gapEnd, fetched);
+    if (remaining.start > remaining.end) {
       infoRow.remove();
     } else {
-      infoRow.dataset.gapEnd = fetchStart - 1;
+      infoRow.dataset.gapStart = remaining.start;
+      infoRow.dataset.gapEnd = remaining.end;
     }
   },
 
