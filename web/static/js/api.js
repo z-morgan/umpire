@@ -28,6 +28,13 @@ const API = {
     return resp.json();
   },
 
+  async getFileLineCounts(ref, paths) {
+    const params = new URLSearchParams({ ref });
+    paths.forEach(path => params.append('path', path));
+    const resp = await fetch(`/api/file-line-counts?${params}`);
+    return resp.json();
+  },
+
   async submitReview({ summary, comments, commit_message_edits, commit_comments }) {
     const resp = await fetch('/api/review', {
       method: 'POST',

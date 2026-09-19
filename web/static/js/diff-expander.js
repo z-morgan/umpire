@@ -25,7 +25,7 @@ const DiffExpander = {
     },
   },
 
-  attach() {
+  async attach() {
     document.querySelectorAll('.d2h-diff-tbody').forEach(tbody => {
       tbody.querySelectorAll('tr').forEach(row => {
         const infoCell = row.querySelector('.d2h-info');
@@ -40,15 +40,46 @@ const DiffExpander = {
         row.addEventListener('click', () => this.handleExpand(row, this.DIRECTIONS.up));
       });
     });
+
+    await this.attachTrailingBars();
+  },
+
+  // Git emits no hunk header after a file's last hunk, so the tail of the file
+  // has no bar to hang the downward expansion on and nothing to read the file's
+  // length out of. Ask the server for the lengths and synthesize the bars.
+  async attachTrailingBars() {
+    const fileWrappers = Array.from(document.querySelectorAll('.d2h-file-wrapper'));
+    const filePaths = fileWrappers.map(wrapper => this.filePathOf(wrapper)).filter(Boolean);
+    if (filePaths.length === 0) return;
+
+    const ref = Sidebar.activeCommitSHA || App.info.head_sha;
+    const lineCounts = await API.getFileLineCounts(ref, filePaths);
+
+    for (const fileWrapper of fileWrappers) {
+      // A file with no count is one the server couldn't read -- deleted, binary,
+      // or a rename the displayed "old -> new" name doesn't resolve to. No count
+      // means no bar, which is what all three want.
+      const totalLines = lineCounts[this.filePathOf(fileWrapper)];
+      if (totalLines === undefined) continue;
+
+      const tbody = fileWrapper.querySelector('.d2h-diff-tbody');
+      if (!tbody || !tbody.lastElementChild) continue;
+
+      const lastRenderedLine = this.lastLineNumberAtOrBefore(tbody.lastElementChild);
+      if (lastRenderedLine >= totalLines) continue;
+
+      const bar = this.buildTrailingBar(lastRenderedLine + 1, totalLines);
+      bar.addEventListener('click', () => this.handleExpand(bar, this.DIRECTIONS.down));
+      tbody.appendChild(bar);
+    }
   },
 
   async handleExpand(infoRow, direction) {
     const fileWrapper = infoRow.closest('.d2h-file-wrapper');
     if (!fileWrapper) return;
 
-    const nameEl = fileWrapper.querySelector('.d2h-file-name');
-    if (!nameEl) return;
-    const filePath = nameEl.textContent.trim();
+    const filePath = this.filePathOf(fileWrapper);
+    if (!filePath) return;
 
     const gapStart = parseInt(infoRow.dataset.gapStart, 10);
     const gapEnd = parseInt(infoRow.dataset.gapEnd, 10);
@@ -88,7 +119,7 @@ const DiffExpander = {
     if (!match) return null;
 
     const hunkNewStart = parseInt(match[1], 10);
-    const prevEnd = this.findPrevLineNumber(infoRow);
+    const prevEnd = this.lastLineNumberAtOrBefore(infoRow.previousElementSibling);
 
     return {
       start: prevEnd + 1,
@@ -96,8 +127,8 @@ const DiffExpander = {
     };
   },
 
-  findPrevLineNumber(infoRow) {
-    let row = infoRow.previousElementSibling;
+  lastLineNumberAtOrBefore(startRow) {
+    let row = startRow;
     while (row) {
       // Skip comment rows and form rows
       if (row.classList.contains('comment-row') || row.classList.contains('comment-form-row')) {
@@ -117,6 +148,37 @@ const DiffExpander = {
     }
     // First hunk in file — gap starts at line 1
     return 0;
+  },
+
+  filePathOf(fileWrapper) {
+    const nameEl = fileWrapper.querySelector('.d2h-file-name');
+    return nameEl ? nameEl.textContent.trim() : null;
+  },
+
+  // Mirrors diff2html's own info-row markup so the bar picks up the blue
+  // .d2h-info background and the tr.d2h-expandable hover already in app.css.
+  // Where a hunk header shows its @@ text, this shows a downward affordance.
+  buildTrailingBar(gapStart, gapEnd) {
+    const tr = document.createElement('tr');
+    tr.className = 'd2h-expandable';
+    tr.dataset.gapStart = gapStart;
+    tr.dataset.gapEnd = gapEnd;
+
+    const lineNumTd = document.createElement('td');
+    lineNumTd.className = 'd2h-code-linenumber d2h-info';
+
+    const codeTd = document.createElement('td');
+    codeTd.className = 'd2h-info';
+
+    const codeDiv = document.createElement('div');
+    codeDiv.className = 'd2h-code-line d2h-expand-down';
+    codeDiv.textContent = '↓';
+
+    codeTd.appendChild(codeDiv);
+    tr.appendChild(lineNumTd);
+    tr.appendChild(codeTd);
+
+    return tr;
   },
 
   buildContextRow(lineNum, content, language) {

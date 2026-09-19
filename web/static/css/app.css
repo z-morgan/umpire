@@ -561,6 +561,12 @@ tr.d2h-expandable:hover .d2h-code-line-ctn {
   background: rgba(56, 139, 253, 0.2) !important;
 }
 
+/* The trailing bar has no @@ text to show, so it centers an arrow instead */
+.d2h-code-line.d2h-expand-down {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
 /* Empty placeholders */
 .d2h-emptyplaceholder,
 .d2h-code-side-emptyplaceholder {
