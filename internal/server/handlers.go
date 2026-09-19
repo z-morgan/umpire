@@ -46,6 +46,7 @@ func RegisterAPI(mux *http.ServeMux, rc *ReviewContext) {
 	mux.HandleFunc("GET /api/info", rc.handleInfo)
 	mux.HandleFunc("POST /api/review", rc.handleReview)
 	mux.HandleFunc("GET /api/file-lines", rc.handleFileLines)
+	mux.HandleFunc("GET /api/file-line-counts", rc.handleFileLineCounts)
 	mux.HandleFunc("POST /api/record-feedback", rc.handleRecordFeedback)
 	mux.HandleFunc("GET /api/feedback-prompt", rc.handleFeedbackPrompt)
 	mux.HandleFunc("POST /api/shutdown", rc.handleShutdown)
@@ -175,6 +176,36 @@ func (rc *ReviewContext) handleFileLines(w http.ResponseWriter, r *http.Request)
 		"start": start,
 		"end":   end,
 	})
+}
+
+// handleFileLineCounts reports how many lines each requested path has at a ref,
+// so the diff view knows where a file ends and can offer to expand down to it.
+// Git emits no hunk header after the last hunk, so there is nothing in the diff
+// itself to read the count out of.
+//
+// A path that cannot be read -- deleted, binary, never existed at this ref --
+// is omitted from the response rather than reported as an error. The client
+// reads a missing count as "no bar for this file", which is what deleted and
+// binary files want anyway.
+func (rc *ReviewContext) handleFileLineCounts(w http.ResponseWriter, r *http.Request) {
+	ref := r.URL.Query().Get("ref")
+	paths := r.URL.Query()["path"]
+
+	if ref == "" || len(paths) == 0 {
+		http.Error(w, "ref and at least one path are required", http.StatusBadRequest)
+		return
+	}
+
+	counts := map[string]int{}
+	for _, path := range paths {
+		content, err := rc.Repo.ShowFile(ref, path)
+		if err != nil {
+			continue
+		}
+		counts[path] = len(strings.Split(content, "\n"))
+	}
+
+	writeJSON(w, counts)
 }
 
 func (rc *ReviewContext) handleRecordFeedback(w http.ResponseWriter, r *http.Request) {

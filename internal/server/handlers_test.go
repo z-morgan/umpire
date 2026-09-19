@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -409,6 +411,54 @@ func TestHandleReviewPrintsSavedPath(t *testing.T) {
 	if out.String() != want {
 		t.Errorf("stdout = %q, want %q", out.String(), want)
 	}
+}
+
+func TestHandleFileLineCounts(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	getCounts := func(t *testing.T, paths ...string) map[string]int {
+		t.Helper()
+		params := url.Values{"ref": {rc.HeadSHA}, "path": paths}
+
+		resp, err := http.Get(ts.URL + "/api/file-line-counts?" + params.Encode())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			t.Fatalf("status = %d, want 200", resp.StatusCode)
+		}
+
+		var counts map[string]int
+		if err := json.NewDecoder(resp.Body).Decode(&counts); err != nil {
+			t.Fatal(err)
+		}
+		return counts
+	}
+
+	t.Run("a readable path", func(t *testing.T) {
+		counts := getCounts(t, "hello.go")
+		if counts["hello.go"] != 3 {
+			t.Errorf("hello.go = %d, want 3", counts["hello.go"])
+		}
+	})
+
+	t.Run("a path that does not exist at the ref", func(t *testing.T) {
+		counts := getCounts(t, "nope.go")
+		if _, ok := counts["nope.go"]; ok {
+			t.Errorf("nope.go = %d, want it omitted", counts["nope.go"])
+		}
+	})
+
+	t.Run("several paths in one request", func(t *testing.T) {
+		counts := getCounts(t, "hello.go", "README.md", "nope.go")
+		want := map[string]int{"hello.go": 3, "README.md": 1}
+		if !reflect.DeepEqual(counts, want) {
+			t.Errorf("counts = %v, want %v", counts, want)
+		}
+	})
 }
 
 func TestHandleRecordFeedbackPersistsSnapshot(t *testing.T) {
