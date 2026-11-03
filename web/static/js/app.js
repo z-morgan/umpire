@@ -555,11 +555,8 @@ const App = {
     const commitMessageEdits = this.collectCommitMessageEdits();
     const commitComments = this.collectCommitComments();
 
-    if (!summary && comments.length === 0 && commitMessageEdits.length === 0
-        && commitComments.length === 0) {
-      alert('Add a summary, a comment, or a commit message edit before submitting.');
-      return;
-    }
+    const isEmpty = !summary && comments.length === 0 && commitMessageEdits.length === 0
+      && commitComments.length === 0;
 
     const submitBtn = document.getElementById('submit-review');
     submitBtn.disabled = true;
@@ -576,6 +573,11 @@ const App = {
 
     const submitBar = document.getElementById('submit-bar');
     document.documentElement.style.removeProperty('--submit-bar-height');
+    if (isEmpty) {
+      this.shutdownAndShow(submitBar);
+      return;
+    }
+
     submitBar.innerHTML = `
       <div class="submit-success">
         ${this.renderSavedPath()}

@@ -79,6 +79,10 @@ what closes the server and hands the session back to you. A user who submits and
 walks away has done the obvious thing and will be left waiting on a pickup that
 can't happen, so it's worth the one sentence up front.
 
+The exception is a review with nothing in it. Submitting with no summary,
+comments or commit message edits skips the feedback question and exits right
+away, so the user can close out a review they have nothing to say about.
+
 Umpire prints a line when it couldn't open the browser. If you see that line,
 say so and hand over the URL — a failed auto-open can leave the browser focused
 with no new tab, which looks enough like success that the user will sit waiting
@@ -136,6 +140,9 @@ The file is JSON:
 
 `summary` is the review as a whole and often carries the most important
 feedback. Read it before the inline comments, not after.
+
+A review with an empty `summary` and no comments or edits means the user looked
+it over and had nothing to add. Say so and stop. There's nothing to act on.
 
 ### Anchoring a comment to a line
 

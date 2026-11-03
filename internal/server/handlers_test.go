@@ -430,6 +430,34 @@ func TestHandleReviewOmitsInstructionsWithoutEdits(t *testing.T) {
 	}
 }
 
+func TestHandleReviewSavesEmptyReview(t *testing.T) {
+	ts, rc := setupTestServerWithContext(t)
+	defer ts.Close()
+
+	payload, err := json.Marshal(review.SubmitRequest{Comments: []review.Comment{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/api/review", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	matches, err := filepath.Glob(filepath.Join(rc.Store.Dir, "review-*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 review file, got %d", len(matches))
+	}
+}
+
 func TestHandleReviewPrintsSavedPath(t *testing.T) {
 	ts, rc := setupTestServerWithContext(t)
 	defer ts.Close()
